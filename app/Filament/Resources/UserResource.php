@@ -59,10 +59,35 @@ class UserResource extends Resource {
                     'pic_lapangan' => 'PIC Lapangan',
                 ] )
                 ->required(),
-                Forms\Components\Select::make( 'kota_id' )
-                ->label( 'Kota' )
-                ->options( Kota::pluck( 'nama', 'id' ) )
-                ->searchable(),
+             Forms\Components\Select::make('kota')
+    ->label('Kota')
+    ->options([
+        'Bogor'     => 'Bogor',
+        'Depok'     => 'Depok',
+        'Tangerang' => 'Tangerang',
+        'Jakarta'   => 'Jakarta',
+        'Bekasi'    => 'Bekasi',
+        'Cirebon'   => 'Cirebon',
+        'Sukabumi'  => 'Sukabumi',
+        'Bandung'   => 'Bandung',
+        'Surabaya'  => 'Surabaya',
+        'Malang'    => 'Malang',
+        'Bali'      => 'Bali',
+        'Jogja'     => 'Jogja',
+        'Semarang'  => 'Semarang',
+        'Solo'      => 'Solo',
+    ])
+    ->searchable()
+    ->preload()
+    ->native(false)
+    ->createOptionForm([
+        Forms\Components\TextInput::make('name')
+            ->label('Kota Baru')
+            ->required(),
+    ])
+    ->createOptionUsing(function (array $data) {
+        return $data['name'];
+    }),
                 Forms\Components\Toggle::make( 'is_active' )
                 ->label( 'Aktif' )
                 ->default( true ),

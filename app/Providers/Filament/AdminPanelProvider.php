@@ -77,7 +77,7 @@ class AdminPanelProvider extends PanelProvider {
             SummaryStatsWidget::class,
             UmkmChartWidget::class,
             SummaryPerKotaWidget::class,
-            DesignProgressChartWidget::class,
+            // DesignProgressChartWidget::class,
         ] )
         ->middleware( [
             EncryptCookies::class,

@@ -160,10 +160,24 @@ public static function canDelete($record): bool
                             ->placeholder('Contoh:50,20...'),
 
                         Forms\Components\Select::make('kota_id')
-                            ->label('Kota')
-                            ->options(Kota::pluck('nama', 'id'))
-                            ->required()
-                            ->searchable(),
+    ->label('Kota')
+    ->options(Kota::pluck('nama', 'id'))
+    ->searchable()
+    ->preload()
+
+    ->createOptionAction(function ($action) {
+        return $action->label('Tambah Kota');
+    })
+
+    ->createOptionForm([
+        Forms\Components\TextInput::make('nama')
+            ->label('Nama Kota')
+            ->required(),
+    ])
+
+    ->createOptionUsing(function (array $data) {
+        return Kota::create($data)->id;
+    }),
                     ])
                     ->columns(2),
 
@@ -271,6 +285,7 @@ public static function canDelete($record): bool
 
         Forms\Components\TextInput::make('sharelock_url')
             ->label('Google Maps URL')
+            ->required()
             ->url()
             ->placeholder('Otomatis terisi...')
             ->readOnly()
@@ -798,25 +813,48 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
 
             ])
             ->columns(3),
+// FOTO
+\Filament\Infolists\Components\Section::make('Foto')
+    ->schema([
 
-        // FOTO
-        \Filament\Infolists\Components\Section::make('Foto')
-            ->schema([
-
-                \Filament\Infolists\Components\ImageEntry::make('foto_depan')
-                    ->label('Foto Depan'),
-
-                \Filament\Infolists\Components\ImageEntry::make('foto_kanan')
-                    ->label('Foto Kanan'),
-
-                \Filament\Infolists\Components\ImageEntry::make('foto_kiri')
-                    ->label('Foto Kiri'),
-
-                \Filament\Infolists\Components\ImageEntry::make('foto_plang_alfamart')
-                    ->label('Foto Alfamart'),
-
+        \Filament\Infolists\Components\ImageEntry::make('foto_depan')
+            ->label('Foto Depan')
+            ->height(200)
+            ->extraImgAttributes([
+                'class' => 'cursor-pointer hover:scale-105 transition rounded-xl shadow',
             ])
-            ->columns(2),
+            ->url(fn ($record) => asset('storage/' . $record->foto_depan), true)
+            ->openUrlInNewTab(false),
+
+        \Filament\Infolists\Components\ImageEntry::make('foto_kanan')
+            ->label('Foto Kanan')
+            ->height(200)
+            ->extraImgAttributes([
+                'class' => 'cursor-pointer hover:scale-105 transition rounded-xl shadow',
+            ])
+            ->url(fn ($record) => asset('storage/' . $record->foto_kanan), true)
+            ->openUrlInNewTab(false),
+
+        \Filament\Infolists\Components\ImageEntry::make('foto_kiri')
+            ->label('Foto Kiri')
+            ->height(200)
+            ->extraImgAttributes([
+                'class' => 'cursor-pointer hover:scale-105 transition rounded-xl shadow',
+            ])
+            ->url(fn ($record) => asset('storage/' . $record->foto_kiri), true)
+            ->openUrlInNewTab(false),
+
+        \Filament\Infolists\Components\ImageEntry::make('foto_plang_alfamart')
+            ->label('Foto Alfamart')
+            ->height(200)
+            ->extraImgAttributes([
+                'class' => 'cursor-pointer hover:scale-105 transition rounded-xl shadow',
+            ])
+            ->url(fn ($record) => asset('storage/' . $record->foto_plang_alfamart), true)
+            ->openUrlInNewTab(false),
+
+    ])
+    ->columns(2),
 
     ])
     ->modalWidth('7xl'),
