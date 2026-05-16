@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Resources\NotifikasiResource;
 use App\Filament\Widgets\DesignProgressChartWidget;
 use App\Filament\Widgets\SummaryPerKotaWidget;
 use App\Filament\Widgets\SummaryStatsWidget;
@@ -15,6 +16,8 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Facades\FilamentView;
+use Filament\Support\View\PanelsRenderHooks;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -22,6 +25,8 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Session;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider {
@@ -41,18 +46,45 @@ class AdminPanelProvider extends PanelProvider {
         ->pages( [
             Pages\Dashboard::class,
         ] )
-//        ->navigationItems([
-//     NavigationItem::make('Notifikasi')
-//         ->url('/admin/notifikasis') // sesuaikan URL
-//         ->icon('heroicon-o-bell')
-//         ->badge(
-//             badge: fn () => \App\Models\Notifikasi::where('user_id', auth()->id())
-//                             ->where('is_read', false)
-//                             ->count() ?: null,
-//             color: 'danger'
-//         )
-//         ->sort(1),
-// ])
+      ->renderHook(
+            'panels::user-menu.before',
+            function (): string {
+                // 1. Ambil ID terakhir dari session
+                $lastSeenId = Session::get('notification_last_seen_id', 0);
+
+                // 2. Cek apakah ada data baru hari ini
+                $hasNewNotification = \App\Models\Notifikasi::where('id', '>', $lastSeenId)
+                    ->whereDate('created_at', \Illuminate\Support\Carbon::today())
+                    ->exists();
+
+                // HAPUS tanda komentar (//) di bawah ini jika ingin MEMAKSA dot muncul saat tes tampilan:
+                // $hasNewNotification = true;
+
+                return Blade::render('
+                    <div class="flex items-center justify-center mr-2 h-9 w-9">
+                        <a href="{{ \App\Filament\Resources\NotifikasiResource::getUrl() }}" 
+                           class="flex items-center justify-center w-full h-full rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-500/10 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-400/10 transition focus:outline-none"
+                           title="Notifikasi">
+                            
+                            <div class="relative p-1">
+                                <x-filament::icon
+                                    icon="heroicon-o-bell"
+                                    class="h-6 w-6"
+                                />
+
+                                @if($hasNewNotification)
+                                    <span style="position: absolute; top: -2px; right: -2px; display: flex; height: 9px; width: 9px;">
+        <span style="position: absolute; display: inline-flex; height: 100%; width: 100%; border-radius: 9999px; background-color: #3b82f6; opacity: 0.75; animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
+        <span style="position: relative; display: inline-flex; border-radius: 9999px; height: 9px; width: 9px; background-color: #2563eb; box-shadow: 0 0 0 2px #ffffff;"></span>
+    </span>
+                                @endif
+                            </div>
+
+                        </a>
+                    </div>
+                ', ['hasNewNotification' => $hasNewNotification]);
+            }
+        )
         ->userMenuItems([
     MenuItem::make()
         ->label(function () {

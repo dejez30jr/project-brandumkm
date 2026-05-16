@@ -20,7 +20,7 @@ class SummaryPerKotaWidget extends BaseWidget {
             Umkm::query()
             ->with( 'kota' )
             ->latest()
-            ->limit( 10 ) // hanya 10 data
+            ->limit( 10 ) 
         )
 
         // tombol lihat semua
@@ -33,7 +33,6 @@ class SummaryPerKotaWidget extends BaseWidget {
         ] )
 
         ->columns( [
-
             // USAHA / KOTA
             Tables\Columns\TextColumn::make( 'nama_usaha' )
             ->label( 'USAHA / KOTA' )
@@ -62,18 +61,15 @@ class SummaryPerKotaWidget extends BaseWidget {
 
         // popup view
         ->actions( [
-
             Tables\Actions\ViewAction::make()
             ->slideOver()
             ->modalWidth( 'screen' )
             ->modalHeading( fn ( $record ) => $record->nama_usaha )
-
             ->infolist( [
 
                 // DATA PEMILIK
                 \Filament\Infolists\Components\Section::make( 'Data Pemilik' )
                 ->schema( [
-
                     \Filament\Infolists\Components\TextEntry::make( 'nama_pemilik' )
                     ->label( 'Nama Pemilik' ),
 
@@ -91,7 +87,6 @@ class SummaryPerKotaWidget extends BaseWidget {
 
                     \Filament\Infolists\Components\TextEntry::make( 'kota.nama' )
                     ->label( 'Kota' ),
-
                 ] )
                 ->columns( 2 ),
 
@@ -112,7 +107,6 @@ class SummaryPerKotaWidget extends BaseWidget {
                 // LOKASI
                 \Filament\Infolists\Components\Section::make( 'Lokasi' )
                 ->schema( [
-
                     \Filament\Infolists\Components\TextEntry::make( 'latitude' )
                     ->label( 'Latitude' ),
 
@@ -129,7 +123,6 @@ class SummaryPerKotaWidget extends BaseWidget {
                 // UKURAN PANEL
                 \Filament\Infolists\Components\Section::make( 'Ukuran Panel' )
                 ->schema( [
-
                     \Filament\Infolists\Components\TextEntry::make( 'total_area_branding' )
                     ->label( 'Total Area Branding' ),
 
@@ -159,14 +152,12 @@ class SummaryPerKotaWidget extends BaseWidget {
 
                     \Filament\Infolists\Components\TextEntry::make( 'kiri_panel_bawah_m2' )
                     ->label( 'Kiri Bawah' ),
-
                 ] )
                 ->columns( 3 ),
 
                 // FOTO
                 \Filament\Infolists\Components\Section::make( 'Foto' )
                 ->schema( [
-
                     \Filament\Infolists\Components\ImageEntry::make( 'foto_depan' )
                     ->label( 'Foto Depan' )
                     ->height( 200 )
@@ -181,18 +172,65 @@ class SummaryPerKotaWidget extends BaseWidget {
                     ->label( 'Foto Kiri' )
                     ->height( 200 )
                     ->url( fn ( $record ) => asset( 'storage/' . $record->foto_kiri ), true ),
-
                 ] )
                 ->columns( 2 ),
 
-            ] ),
+                // DESIGN GEROBAK (Sudah dipindahkan ke dalam array infolist)
+                \Filament\Infolists\Components\Section::make('Design Gerobak')
+                ->description('Design final dan tampak gerobak yang sudah disetujui.')
+                ->icon('heroicon-o-paint-brush')
+                ->schema([
+                    \Filament\Infolists\Components\ImageEntry::make('design_final')
+                    ->label('Design Final')
+                    ->height(220)
+                    ->columnSpanFull() 
+                    ->extraImgAttributes([
+                        'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
+                    ])
+                    ->url(fn ($record) => $record->design_final ? asset('storage/' . $record->design_final) : null, true)
+                    ->visible(fn ($record) => !empty($record->design_final)),
+
+                    \Filament\Infolists\Components\ImageEntry::make('design_gerobak_depan')
+                    ->label('Gerobak Tampak Depan')
+                    ->height(200)
+                    ->extraImgAttributes([
+                        'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
+                    ])
+                    ->url(fn ($record) => $record->design_gerobak_depan ? asset('storage/' . $record->design_gerobak_depan) : null, true)
+                    ->visible(fn ($record) => !empty($record->design_gerobak_depan)),
+
+                    \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kiri')
+                    ->label('Gerobak Tampak Kiri')
+                    ->height(200)
+                    ->extraImgAttributes([
+                        'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
+                    ])
+                    ->url(fn ($record) => $record->design_gerobak_kiri ? asset('storage/' . $record->design_gerobak_kiri) : null, true)
+                    ->visible(fn ($record) => !empty($record->design_gerobak_kiri)),
+
+                    \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kanan')
+                    ->label('Gerobak Tampak Kanan')
+                    ->height(200)
+                    ->extraImgAttributes([
+                        'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
+                    ])
+                    ->url(fn ($record) => $record->design_gerobak_kanan ? asset('storage/' . $record->design_gerobak_kanan) : null, true)
+                    ->visible(fn ($record) => !empty($record->design_gerobak_kanan)),
+                ])
+                ->columns(2)
+                ->collapsible() 
+                ->visible(fn ($record) =>
+                    !empty($record->design_final) ||
+                    !empty($record->design_gerobak_depan) ||
+                    !empty($record->design_gerobak_kiri) ||
+                    !empty($record->design_gerobak_kanan)
+                ),
+            ] ), // <--- Sekarang penutup array infolist ada di sini (setelah semua section selesai)
         ] )
 
         // supaya klik row buka popup
         ->recordAction( 'view' )
-
         ->paginated( false )
-
         ->striped();
     }
 }

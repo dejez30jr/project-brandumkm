@@ -14,6 +14,7 @@ class SummaryStatsWidget extends BaseWidget {
 
     protected function getStats(): array {
         $stats = [];
+        
         // Create UMKM hanya untuk pic_lapangan
         if ( auth()->user()?->role === 'pic_lapangan' ) {
             $stats[] = Stat::make( 'Create Data UMKM', 'Tambah' )
@@ -38,6 +39,19 @@ class SummaryStatsWidget extends BaseWidget {
         ->descriptionIcon( 'heroicon-m-building-storefront' )
         ->color( 'primary' )
         ->url( UmkmResource::getUrl( 'index' ) )
+        ->extraAttributes( [
+            'class' => 'cursor-pointer hover:opacity-80 transition-opacity',
+        ] );
+
+        $stats[] = Stat::make( 'Design Perlu Review', UmkmDesign::where( 'status', 'pending' )->count() )
+        ->description( 'Menunggu review' )
+        ->descriptionIcon( 'heroicon-m-clock' )
+        ->color( 'warning' )
+        ->url( UmkmDesignResource::getUrl( 'index', [
+            'tableFilters' => [
+                'status' => [ 'value' => 'pending' ],
+            ],
+        ] ) )
         ->extraAttributes( [
             'class' => 'cursor-pointer hover:opacity-80 transition-opacity',
         ] );
@@ -98,7 +112,7 @@ class SummaryStatsWidget extends BaseWidget {
             'class' => 'cursor-pointer hover:opacity-80 transition-opacity',
         ] );
 
-        // Design Revisi
+        // Design Perlu Revisi
         $stats[] = Stat::make( 'Design Perlu Revisi', UmkmDesign::where( 'status', 'revision_needed' )->count() )
         ->description( 'Perlu diperbaiki' )
         ->descriptionIcon( 'heroicon-m-exclamation-triangle' )
@@ -106,6 +120,20 @@ class SummaryStatsWidget extends BaseWidget {
         ->url( UmkmDesignResource::getUrl( 'index', [
             'tableFilters' => [
                 'status' => [ 'value' => 'revision_needed' ],
+            ],
+        ] ) )
+        ->extraAttributes( [
+            'class' => 'cursor-pointer hover:opacity-80 transition-opacity',
+        ] );
+
+        // ========== TAMBAHAN: DESIGN SUDAH DIREVISI ==========
+        $stats[] = Stat::make( 'Design Sudah Direvisi', UmkmDesign::where( 'status', 'revised' )->count() )
+        ->description( 'Menunggu review ulang' )
+        ->descriptionIcon( 'heroicon-m-arrow-path-rounded-square' )
+        ->color( 'info' ) // Warna biru info
+        ->url( UmkmDesignResource::getUrl( 'index', [
+            'tableFilters' => [
+                'status' => [ 'value' => 'revised' ],
             ],
         ] ) )
         ->extraAttributes( [

@@ -79,6 +79,12 @@ class Umkm extends Model
     'foto_kanan',
     'foto_kiri',
     'foto_plang_alfamart',
+
+    // design final (hasil revisi jika ada)
+      'design_final',
+            'design_gerobak_depan',
+            'design_gerobak_kiri',
+            'design_gerobak_kanan',
     ];
 
     protected $casts = [

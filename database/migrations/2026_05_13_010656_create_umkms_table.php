@@ -67,6 +67,12 @@ return new class extends Migration
     $table->string('foto_kanan')->nullable();
     $table->string('foto_kiri')->nullable();
     $table->string('foto_plang_alfamart')->nullable();
+
+    // design final (hasil revisi jika ada)
+      $table->string('design_final')->nullable();
+            $table->string('design_gerobak_depan')->nullable();
+            $table->string('design_gerobak_kiri')->nullable();
+            $table->string('design_gerobak_kanan')->nullable();
             
             // Relasi
             $table->foreignId('kota_id')->constrained('kotas')->onDelete('cascade');

@@ -62,6 +62,13 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(Notifikasi::class);
     }
 
+public function readNotifications()
+{
+    return $this->belongsToMany(Notifikasi::class, 'notifikasi_user')
+                ->withPivot('read_at')
+                ->withTimestamps(); // Tambahkan ini
+}
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

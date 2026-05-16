@@ -629,7 +629,7 @@ Forms\Components\FileUpload::make('foto_kiri')
 
 Forms\Components\FileUpload::make('foto_plang_alfamart')
     ->required()
-    ->label('FOTO DEPAN')
+    ->label('FOTO WIDE JARAK JAUH (PLANG ALFAMART)')
     ->disk('public')
     ->directory('umkm-fotos')
     ->image()
@@ -705,6 +705,7 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
                     ->dateTime('d M Y')
                     ->sortable(),
             ])
+             ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
@@ -821,40 +822,89 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
             ->label('Foto Depan')
             ->height(200)
             ->extraImgAttributes([
-                'class' => 'cursor-pointer hover:scale-105 transition rounded-xl shadow',
+                'class' => 'cursor-pointer hover:scale-105 transition',
             ])
-            ->url(fn ($record) => asset('storage/' . $record->foto_depan), true)
-            ->openUrlInNewTab(false),
+            ->url(fn ($record) => asset('storage/' . $record->foto_depan), true),
 
         \Filament\Infolists\Components\ImageEntry::make('foto_kanan')
             ->label('Foto Kanan')
             ->height(200)
             ->extraImgAttributes([
-                'class' => 'cursor-pointer hover:scale-105 transition rounded-xl shadow',
+                'class' => 'cursor-pointer hover:scale-105 transition',
             ])
-            ->url(fn ($record) => asset('storage/' . $record->foto_kanan), true)
-            ->openUrlInNewTab(false),
+            ->url(fn ($record) => asset('storage/' . $record->foto_kanan), true),
 
         \Filament\Infolists\Components\ImageEntry::make('foto_kiri')
             ->label('Foto Kiri')
             ->height(200)
             ->extraImgAttributes([
-                'class' => 'cursor-pointer hover:scale-105 transition rounded-xl shadow',
+                'class' => 'cursor-pointer hover:scale-105 transition',
             ])
-            ->url(fn ($record) => asset('storage/' . $record->foto_kiri), true)
-            ->openUrlInNewTab(false),
+            ->url(fn ($record) => asset('storage/' . $record->foto_kiri), true),
 
         \Filament\Infolists\Components\ImageEntry::make('foto_plang_alfamart')
-            ->label('Foto Alfamart')
+            ->label('Foto jarak dekat plang Alfamart')
             ->height(200)
             ->extraImgAttributes([
-                'class' => 'cursor-pointer hover:scale-105 transition rounded-xl shadow',
+                'class' => 'cursor-pointer hover:scale-105 transition',
             ])
-            ->url(fn ($record) => asset('storage/' . $record->foto_plang_alfamart), true)
-            ->openUrlInNewTab(false),
+            ->url(fn ($record) => asset('storage/' . $record->foto_plang_alfamart), true),
 
     ])
     ->columns(2),
+
+    // acc design gerobak
+        \Filament\Infolists\Components\Section::make('Design Gerobak')
+    ->description('Design final dan tampak gerobak yang sudah disetujui.')
+    ->icon('heroicon-o-paint-brush')
+    ->schema([
+
+        \Filament\Infolists\Components\ImageEntry::make('design_final')
+            ->label('Design Final')
+            ->height(220)
+            ->columnSpanFull() // tampil full lebar karena ini design utama
+            ->extraImgAttributes([
+                'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
+            ])
+            ->url(fn ($record) => $record->design_final ? asset('storage/' . $record->design_final) : null, true)
+            ->visible(fn ($record) => !empty($record->design_final)),
+
+        \Filament\Infolists\Components\ImageEntry::make('design_gerobak_depan')
+            ->label('Gerobak Tampak Depan')
+            ->height(200)
+            ->extraImgAttributes([
+                'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
+            ])
+            ->url(fn ($record) => $record->design_gerobak_depan ? asset('storage/' . $record->design_gerobak_depan) : null, true)
+            ->visible(fn ($record) => !empty($record->design_gerobak_depan)),
+
+        \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kiri')
+            ->label('Gerobak Tampak Kiri')
+            ->height(200)
+            ->extraImgAttributes([
+                'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
+            ])
+            ->url(fn ($record) => $record->design_gerobak_kiri ? asset('storage/' . $record->design_gerobak_kiri) : null, true)
+            ->visible(fn ($record) => !empty($record->design_gerobak_kiri)),
+
+        \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kanan')
+            ->label('Gerobak Tampak Kanan')
+            ->height(200)
+            ->extraImgAttributes([
+                'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
+            ])
+            ->url(fn ($record) => $record->design_gerobak_kanan ? asset('storage/' . $record->design_gerobak_kanan) : null, true)
+            ->visible(fn ($record) => !empty($record->design_gerobak_kanan)),
+
+    ])
+    ->columns(2)
+    ->collapsible() // section bisa diciutkan
+    ->visible(fn ($record) =>
+        !empty($record->design_final) ||
+        !empty($record->design_gerobak_depan) ||
+        !empty($record->design_gerobak_kiri) ||
+        !empty($record->design_gerobak_kanan)
+    ), // section hanya muncul kalau ada minimal 1 gambar
 
     ])
     ->modalWidth('7xl'),

@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Notifikasi extends Model
 {
+    protected $table = 'notifikasis';
     protected $fillable = [
         'user_id',
         'judul',
@@ -31,4 +33,12 @@ class Notifikasi extends Model
     {
         return $this->morphTo();
     }
+
+    // Di dalam class Notifikasi
+public function users()
+{
+    return $this->belongsToMany(User::class, 'notifikasi_user')
+                ->withPivot('read_at')
+                ->withTimestamps();
+}
 }
