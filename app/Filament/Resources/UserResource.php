@@ -20,7 +20,7 @@ class UserResource extends Resource {
     protected static ?string $pluralLabel = 'Pengguna';
 
     public static function canAccess(): bool {
-        return auth()->user()?->isAdmin() || auth()->user()->isPicLapangan();
+        return auth()->user()?->isAdmin();
     }
 
     public static function canEdit( $record ): bool {

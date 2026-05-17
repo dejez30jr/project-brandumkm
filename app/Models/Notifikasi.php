@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Umkm;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -33,6 +34,10 @@ class Notifikasi extends Model
     {
         return $this->morphTo();
     }
+
+    public function umkm() {
+    return $this->belongsTo(Umkm::class, 'umkm_id');
+}
 
     // Di dalam class Notifikasi
 public function users()

@@ -18,7 +18,7 @@ class SummaryPerKotaWidget extends BaseWidget {
         return $table
         ->query(
             Umkm::query()
-            ->with( 'kota' )
+            ->with( 'kota' ) // Sesuaikan nama relasi kota jika berbeda
             ->latest()
             ->limit( 10 ) 
         )
@@ -66,6 +66,13 @@ class SummaryPerKotaWidget extends BaseWidget {
             ->modalWidth( 'screen' )
             ->modalHeading( fn ( $record ) => $record->nama_usaha )
             ->infolist( [
+
+                // =========================================================================
+                // INJEKSI LIGHTBOX POPUP COMPONENT (Stanby mendengarkan klik pada gambar)
+                // =========================================================================
+                \Filament\Infolists\Components\ViewEntry::make('image_lightbox')
+                    ->view('filament.infolists.components.image-lightbox')
+                    ->columnSpanFull(),
 
                 // DATA PEMILIK
                 \Filament\Infolists\Components\Section::make( 'Data Pemilik' )
@@ -155,27 +162,36 @@ class SummaryPerKotaWidget extends BaseWidget {
                 ] )
                 ->columns( 3 ),
 
-                // FOTO
+                // FOTO (Diubah ke sistem trigger click Event Lightbox)
                 \Filament\Infolists\Components\Section::make( 'Foto' )
                 ->schema( [
                     \Filament\Infolists\Components\ImageEntry::make( 'foto_depan' )
                     ->label( 'Foto Depan' )
                     ->height( 200 )
-                    ->url( fn ( $record ) => asset( 'storage/' . $record->foto_depan ), true ),
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_depan) . '" })',
+                    ]),
 
                     \Filament\Infolists\Components\ImageEntry::make( 'foto_kanan' )
                     ->label( 'Foto Kanan' )
                     ->height( 200 )
-                    ->url( fn ( $record ) => asset( 'storage/' . $record->foto_kanan ), true ),
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_kanan) . '" })',
+                    ]),
 
                     \Filament\Infolists\Components\ImageEntry::make( 'foto_kiri' )
                     ->label( 'Foto Kiri' )
                     ->height( 200 )
-                    ->url( fn ( $record ) => asset( 'storage/' . $record->foto_kiri ), true ),
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_kiri) . '" })',
+                    ]),
                 ] )
-                ->columns( 2 ),
+                ->columns( 3 ), // Diubah ke 3 agar sebaris rapi
 
-                // DESIGN GEROBAK (Sudah dipindahkan ke dalam array infolist)
+                // DESIGN GEROBAK (Diubah ke sistem trigger click Event Lightbox)
                 \Filament\Infolists\Components\Section::make('Design Gerobak')
                 ->description('Design final dan tampak gerobak yang sudah disetujui.')
                 ->icon('heroicon-o-paint-brush')
@@ -184,40 +200,40 @@ class SummaryPerKotaWidget extends BaseWidget {
                     ->label('Design Final')
                     ->height(220)
                     ->columnSpanFull() 
-                    ->extraImgAttributes([
-                        'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_final) . '" })',
                     ])
-                    ->url(fn ($record) => $record->design_final ? asset('storage/' . $record->design_final) : null, true)
                     ->visible(fn ($record) => !empty($record->design_final)),
 
                     \Filament\Infolists\Components\ImageEntry::make('design_gerobak_depan')
                     ->label('Gerobak Tampak Depan')
                     ->height(200)
-                    ->extraImgAttributes([
-                        'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_gerobak_depan) . '" })',
                     ])
-                    ->url(fn ($record) => $record->design_gerobak_depan ? asset('storage/' . $record->design_gerobak_depan) : null, true)
                     ->visible(fn ($record) => !empty($record->design_gerobak_depan)),
 
                     \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kiri')
                     ->label('Gerobak Tampak Kiri')
                     ->height(200)
-                    ->extraImgAttributes([
-                        'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_gerobak_kiri) . '" })',
                     ])
-                    ->url(fn ($record) => $record->design_gerobak_kiri ? asset('storage/' . $record->design_gerobak_kiri) : null, true)
                     ->visible(fn ($record) => !empty($record->design_gerobak_kiri)),
 
                     \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kanan')
                     ->label('Gerobak Tampak Kanan')
                     ->height(200)
-                    ->extraImgAttributes([
-                        'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_gerobak_kanan) . '" })',
                     ])
-                    ->url(fn ($record) => $record->design_gerobak_kanan ? asset('storage/' . $record->design_gerobak_kanan) : null, true)
                     ->visible(fn ($record) => !empty($record->design_gerobak_kanan)),
                 ])
-                ->columns(2)
+                ->columns(3) // Diubah ke 3 agar simetris di layout web m2 screen
                 ->collapsible() 
                 ->visible(fn ($record) =>
                     !empty($record->design_final) ||
@@ -225,7 +241,7 @@ class SummaryPerKotaWidget extends BaseWidget {
                     !empty($record->design_gerobak_kiri) ||
                     !empty($record->design_gerobak_kanan)
                 ),
-            ] ), // <--- Sekarang penutup array infolist ada di sini (setelah semua section selesai)
+            ] ),
         ] )
 
         // supaya klik row buka popup

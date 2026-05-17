@@ -32,7 +32,9 @@ class NotifikasiResource extends Resource
     public static function getNavigationBadge(): ?string
     {
         $user = auth()->user();
+        if (!$user) return null;
         
+        // Hitung notifikasi yang belum dibaca oleh USER YANG SEDANG LOGIN SAJA
         $unreadCount = Notifikasi::whereDoesntHave('users', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })->count();
@@ -54,7 +56,27 @@ class NotifikasiResource extends Resource
 
     public static function table(Table $table): Table
     {
-        // 1. Ambil ID terakhir yang sudah dilihat user dari session (Disinkronkan pakai huruf i)
+        $user = auth()->user();
+
+        if ($user) {
+            // ================= LOGIKA UTAMA PERBAIKAN =================
+            // Ambil semua notifikasi yang BELUM dibaca oleh user yang sedang login saat ini
+            $unreadNotifications = Notifikasi::whereDoesntHave('users', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })->get();
+
+            // Masukkan data ke tabel pivot (notifikasi_user) agar ditandai sudah dibaca oleh user ini saja
+            foreach ($unreadNotifications as $notif) {
+                // Gunakan relasi 'users' di model Notifikasi kamu untuk melakukan attach id user
+                // Pastikan di model App\Models\Notifikasi kamu sudah ada method: public function users() { return $this->belongsToMany(User::class, 'notifikasi_user'); }
+                if (method_exists($notif, 'users')) {
+                    $notif->users()->syncWithoutDetaching([$user->id]);
+                }
+            }
+            // ==========================================================
+        }
+
+        // 1. Ambil ID terakhir yang sudah dilihat user dari session
         $lastSeenId = Session::get('notifikasi_last_seen_id', 0);
 
         // 2. Ambil ID terbaru yang ada di database saat ini
@@ -85,15 +107,39 @@ class NotifikasiResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->recordUrl(function (Notifikasi $record) {
-                // Logika redirect berdasarkan judul
+                if ($record->judul === 'UMKM Perlu Design') {
+                    if (isset($record->umkm_id) && $record->umkm_id) {
+                        return UmkmDesignResource::getUrl('create', ['umkm' => $record->umkm_id]);
+                    }
+
+                    $umkm = \App\Models\Umkm::all()->first(function ($item) use ($record) {
+                        return str_contains(strtolower($record->pesan), strtolower($item->nama_usaha)); 
+                    });
+
+                    if ($umkm) {
+                        return UmkmDesignResource::getUrl('create', ['umkm' => $umkm->id]);
+                    }
+
+                    return UmkmDesignResource::getUrl('create');
+                }
+
                 return match ($record->judul) {
                     'UMKM Baru Masuk' => UmkmResource::getUrl('index'),
-                    'Design Baru Upload' => UmkmDesignResource::getUrl('index'),
-                    
-                    // ========== SEKARANG INI BISA DIKLIK ==========
-                    // Pastikan teks & emoji di bawah ini SAMA PERSIS dengan yang kita buat di model UmkmDesign.php
-                    'Desain Telah Direvisi 🎨' => UmkmDesignResource::getUrl('index'),
-                    
+                    'Design Baru Upload' => UmkmDesignResource::getUrl('index', [
+                        'tableFilters' => [
+                            'status' => ['value' => 'pending'],
+                        ],
+                    ]),
+                    'Desain Telah Direvisi 🎨' => UmkmDesignResource::getUrl('index', [
+                        'tableFilters' => [
+                            'status' => ['value' => 'revised'],
+                        ],
+                    ]),
+                    'Design Perlu Revisi', 'Design Perlu Revisi ⚠️' => UmkmDesignResource::getUrl('index', [
+                        'tableFilters' => [
+                            'status' => [ 'value' => 'revision_needed' ],
+                        ],
+                    ]),
                     default => null,
                 };
             });

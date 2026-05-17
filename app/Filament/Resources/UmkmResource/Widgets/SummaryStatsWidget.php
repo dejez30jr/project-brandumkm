@@ -129,7 +129,7 @@ class SummaryStatsWidget extends BaseWidget {
         // ========== TAMBAHAN: DESIGN SUDAH DIREVISI ==========
         $stats[] = Stat::make( 'Design Sudah Direvisi', UmkmDesign::where( 'status', 'revised' )->count() )
         ->description( 'Menunggu review ulang' )
-        ->descriptionIcon( 'heroicon-m-arrow-path-rounded-square' )
+        ->descriptionIcon( 'heroicon-m-arrow-path-rounded-square'   )
         ->color( 'info' ) // Warna biru info
         ->url( UmkmDesignResource::getUrl( 'index', [
             'tableFilters' => [

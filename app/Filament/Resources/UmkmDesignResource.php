@@ -75,26 +75,38 @@ public static function getNavigationBadgeColor(): ?string
                 Forms\Components\Section::make('Upload Design')
                     ->schema([
 
-                        // ========== FILTER KOTA (helper, tidak disimpan ke DB) ==========
-                        Forms\Components\Select::make('kota_id')
-                            ->label('Filter Kota')
-                            ->placeholder('Pilih kota terlebih dahulu')
-                            ->options(Kota::orderBy('nama')->pluck('nama', 'id'))
-                            ->searchable()
-                            ->preload()
-                            ->live()
-                            ->dehydrated(false) // TIDAK disimpan ke tabel umkm_designs
-                            ->afterStateUpdated(fn (Forms\Set $set) => $set('umkm_id', null))
-                            ->afterStateHydrated(function (Forms\Set $set, ?UmkmDesign $record) {
-                                // Auto-isi kota saat edit
-                                if ($record && $record->umkm) {
-                                    $set('kota_id', $record->umkm->kota_id);
-                                }
-                            }),
+                    // ========== FILTER KOTA (helper, tidak disimpan ke DB) ==========
+Forms\Components\Select::make('kota_id')
+    ->label('Filter Kota')
+    ->placeholder('Pilih kota terlebih dahulu')
+    ->options(\App\Models\Kota::orderBy('nama')->pluck('nama', 'id'))
+    ->searchable()
+    ->preload()
+    ->live()
+    ->dehydrated(false) // TIDAK disimpan ke tabel umkm_designs
+    ->afterStateUpdated(fn (Forms\Set $set) => $set('umkm_id', null))
+    ->afterStateHydrated(function (Forms\Set $set, ?\App\Models\UmkmDesign $record) {
+        // 1. KONDISI EDIT: Auto-isi kota saat edit data yang sudah ada
+        if ($record && $record->umkm) {
+            $set('kota_id', $record->umkm->kota_id);
+            return; // hentikan eksekusi jika sudah dalam mode edit
+        }
+
+        // 2. KONDISI CREATE (DARI NOTIFIKASI): Ambil parameter 'umkm' dari URL
+        $umkmIdFromUrl = request()->query('umkm');
+        if ($umkmIdFromUrl) {
+            $umkm = \App\Models\Umkm::find($umkmIdFromUrl);
+            if ($umkm && $umkm->kota_id) {
+                // Set otomatis kota si UMKM tersebut ke dropdown filter kota ini
+                $set('kota_id', $umkm->kota_id);
+            }
+        }
+    }),
 
                         // ========== UMKM (dependent ke kota_id) ==========
                         Forms\Components\Select::make('umkm_id')
                             ->label('UMKM')
+                            ->relationship('umkm', 'nama_usaha')
                             ->placeholder(fn (Forms\Get $get) =>
                                 $get('kota_id') ? 'Pilih UMKM' : 'Pilih kota terlebih dahulu'
                             )
@@ -115,6 +127,7 @@ public static function getNavigationBadgeColor(): ?string
                             ->searchable()
                             ->preload()
                             ->required()
+                            ->default(request()->query('umkm'))
                             ->disabled(fn (Forms\Get $get) => ! $get('kota_id'))
                             ->live(),
 

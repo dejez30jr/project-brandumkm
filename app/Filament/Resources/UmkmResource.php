@@ -2,22 +2,24 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\UmkmResource\Pages;
-use App\Models\Umkm;
-// use App\Models\UmkmFoto;
-use App\Models\Kota;
 use App\Exports\UmkmExport;
+use App\Filament\Resources\UmkmResource\Pages;
+use App\Models\Kota;
+use App\Models\Umkm;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Maatwebsite\Excel\Facades\Excel;
-use Filament\Tables\Actions\Action;
-use Filament\Notifications\Notification;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Maatwebsite\Excel\Facades\Excel;
 
 class UmkmResource extends Resource
 {
@@ -718,6 +720,23 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
                     ->options(Kota::pluck('nama', 'id')),
                 Tables\Filters\TernaryFilter::make('memenuhi_kriteria')
                     ->label('Memenuhi Kriteria'),
+                Filter::make('created_at')
+    ->label('Tanggal Submit')
+    ->form([
+        DatePicker::make('created_from')->label('Dari Tanggal'),
+        DatePicker::make('created_until')->label('Sampai Tanggal'),
+    ])
+    ->query(function (Builder $query, array $data): Builder {
+        return $query
+            ->when(
+                $data['created_from'],
+                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+            )
+            ->when(
+                $data['created_until'],
+                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+            );
+    })
             ])
             ->actions([
         Tables\Actions\ViewAction::make()
@@ -863,49 +882,47 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
     ->columns(2),
 
     // acc design gerobak
-        \Filament\Infolists\Components\Section::make('Design Gerobak')
-    ->description('Design final dan tampak gerobak yang sudah disetujui.')
-    ->icon('heroicon-o-paint-brush')
-    ->schema([
+      \Filament\Infolists\Components\Section::make('Design Gerobak')
+                ->description('Design final dan tampak gerobak yang sudah disetujui.')
+                ->icon('heroicon-o-paint-brush')
+                ->schema([
+                    \Filament\Infolists\Components\ImageEntry::make('design_final')
+                    ->label('Design Final')
+                    ->height(220)
+                    ->columnSpanFull() 
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_final) . '" })',
+                    ])
+                    ->visible(fn ($record) => !empty($record->design_final)),
 
-        \Filament\Infolists\Components\ImageEntry::make('design_final')
-            ->label('Design Final')
-            ->height(220)
-            ->columnSpanFull() // tampil full lebar karena ini design utama
-            ->extraImgAttributes([
-                'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
-            ])
-            ->url(fn ($record) => $record->design_final ? asset('storage/' . $record->design_final) : null, true)
-            ->visible(fn ($record) => !empty($record->design_final)),
+                    \Filament\Infolists\Components\ImageEntry::make('design_gerobak_depan')
+                    ->label('Gerobak Tampak Depan')
+                    ->height(200)
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_gerobak_depan) . '" })',
+                    ])
+                    ->visible(fn ($record) => !empty($record->design_gerobak_depan)),
 
-        \Filament\Infolists\Components\ImageEntry::make('design_gerobak_depan')
-            ->label('Gerobak Tampak Depan')
-            ->height(200)
-            ->extraImgAttributes([
-                'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
-            ])
-            ->url(fn ($record) => $record->design_gerobak_depan ? asset('storage/' . $record->design_gerobak_depan) : null, true)
-            ->visible(fn ($record) => !empty($record->design_gerobak_depan)),
+                    \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kiri')
+                    ->label('Gerobak Tampak Kiri')
+                    ->height(200)
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_gerobak_kiri) . '" })',
+                    ])
+                    ->visible(fn ($record) => !empty($record->design_gerobak_kiri)),
 
-        \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kiri')
-            ->label('Gerobak Tampak Kiri')
-            ->height(200)
-            ->extraImgAttributes([
-                'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
-            ])
-            ->url(fn ($record) => $record->design_gerobak_kiri ? asset('storage/' . $record->design_gerobak_kiri) : null, true)
-            ->visible(fn ($record) => !empty($record->design_gerobak_kiri)),
-
-        \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kanan')
-            ->label('Gerobak Tampak Kanan')
-            ->height(200)
-            ->extraImgAttributes([
-                'class' => 'cursor-pointer hover:scale-105 transition rounded-lg',
-            ])
-            ->url(fn ($record) => $record->design_gerobak_kanan ? asset('storage/' . $record->design_gerobak_kanan) : null, true)
-            ->visible(fn ($record) => !empty($record->design_gerobak_kanan)),
-
-    ])
+                    \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kanan')
+                    ->label('Gerobak Tampak Kanan')
+                    ->height(200)
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_gerobak_kanan) . '" })',
+                    ])
+                    ->visible(fn ($record) => !empty($record->design_gerobak_kanan)),
+                ])
     ->columns(2)
     ->collapsible() // section bisa diciutkan
     ->visible(fn ($record) =>
