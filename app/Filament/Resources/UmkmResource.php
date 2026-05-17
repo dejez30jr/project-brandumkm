@@ -817,39 +817,48 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
 // FOTO
 \Filament\Infolists\Components\Section::make('Foto')
     ->schema([
+// PANGGIL LIGHTBOX MODAL DI SINI (Agar selalu aktif & tidak bergantung pada ada/tidaknya video)
+        \Filament\Infolists\Components\ViewEntry::make('image_lightbox')
+            ->view('filament.infolists.components.image-lightbox')
+            ->columnSpanFull(), // Makan space full tapi tidak terlihat karena modalnya 'display: none'
 
         \Filament\Infolists\Components\ImageEntry::make('foto_depan')
             ->label('Foto Depan')
             ->height(200)
-            ->extraImgAttributes([
-                'class' => 'cursor-pointer hover:scale-105 transition',
-            ])
-            ->url(fn ($record) => asset('storage/' . $record->foto_depan), true),
+            ->extraAttributes(fn ($record) => [
+                'class' => 'cursor-pointer hover:scale-105 transition duration-300',
+                'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_depan) . '" })',
+            ]),
 
         \Filament\Infolists\Components\ImageEntry::make('foto_kanan')
             ->label('Foto Kanan')
             ->height(200)
-            ->extraImgAttributes([
-                'class' => 'cursor-pointer hover:scale-105 transition',
-            ])
-            ->url(fn ($record) => asset('storage/' . $record->foto_kanan), true),
+            ->extraAttributes(fn ($record) => [
+                'class' => 'cursor-pointer hover:scale-105 transition duration-300',
+                'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_kanan) . '" })',
+            ]),
 
         \Filament\Infolists\Components\ImageEntry::make('foto_kiri')
             ->label('Foto Kiri')
             ->height(200)
-            ->extraImgAttributes([
-                'class' => 'cursor-pointer hover:scale-105 transition',
-            ])
-            ->url(fn ($record) => asset('storage/' . $record->foto_kiri), true),
+            ->extraAttributes(fn ($record) => [
+                'class' => 'cursor-pointer hover:scale-105 transition duration-300',
+                'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_kiri) . '" })',
+            ]),
 
         \Filament\Infolists\Components\ImageEntry::make('foto_plang_alfamart')
             ->label('Foto jarak dekat plang Alfamart')
             ->height(200)
-            ->extraImgAttributes([
-                'class' => 'cursor-pointer hover:scale-105 transition',
-            ])
-            ->url(fn ($record) => asset('storage/' . $record->foto_plang_alfamart), true),
+            ->extraAttributes(fn ($record) => [
+                'class' => 'cursor-pointer hover:scale-105 transition duration-300',
+                'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_plang_alfamart) . '" })',
+            ]),
 
+        // Video Entry menggunakan ViewEntry murni tanpa modal
+        \Filament\Infolists\Components\ViewEntry::make('video_validasi')
+            ->label('Video Validasi')
+            ->view('filament.infolists.components.video-player')
+            ->visible(fn ($record) => !empty($record->video_validasi)),
     ])
     ->columns(2),
 

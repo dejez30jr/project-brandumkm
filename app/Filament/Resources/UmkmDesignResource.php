@@ -235,22 +235,22 @@ public static function getNavigationBadgeColor(): ?string
                     ->visible(fn () => auth()->user()?->isDesign()),
 
                 // Tombol Download
-                Tables\Actions\Action::make('download')
-                    ->label('Download img')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('info')
-                    ->action(function (UmkmDesign $record) {
-                        $filePath = storage_path('app/public/' . $record->file_path);
+                // Tables\Actions\Action::make('download')
+                //     ->label('Download img')
+                //     ->icon('heroicon-o-arrow-down-tray')
+                //     ->color('info')
+                //     ->action(function (UmkmDesign $record) {
+                //         $filePath = storage_path('app/public/' . $record->file_path);
 
-                        if (file_exists($filePath)) {
-                            return response()->download($filePath);
-                        }
+                //         if (file_exists($filePath)) {
+                //             return response()->download($filePath);
+                //         }
 
-                        \Filament\Notifications\Notification::make()
-                            ->title('File tidak ditemukan')
-                            ->danger()
-                            ->send();
-                    }),
+                //         \Filament\Notifications\Notification::make()
+                //             ->title('File tidak ditemukan')
+                //             ->danger()
+                //             ->send();
+                //     }),
 
                 // Approve Design
                 Tables\Actions\Action::make('approve')
@@ -313,6 +313,75 @@ public static function getNavigationBadgeColor(): ?string
                 ]),
             ]);
     }
+
+    // ... Batas akhir method form() kamu ...
+
+    public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
+    {
+        return $infolist
+            ->schema([
+                // PANGGIL MODAL POPUP DI SINI (Selalu stanby di halaman detail view)
+                \Filament\Infolists\Components\ViewEntry::make('image_lightbox')
+                    ->view('filament.infolists.components.image-lightbox')
+                    ->columnSpanFull(),
+
+                \Filament\Infolists\Components\Section::make('Informasi UMKM & Versi Design')
+                    ->schema([
+                        \Filament\Infolists\Components\TextEntry::make('umkm.nama_usaha')->label('Nama Usaha'),
+                        \Filament\Infolists\Components\TextEntry::make('versi')->label('Versi Design')->badge(),
+                        \Filament\Infolists\Components\TextEntry::make('status')
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                'pending' => 'warning',
+                                'approved' => 'success',
+                                'revision_needed' => 'danger',
+                                'revised' => 'info',
+                                default => 'gray',
+                            }),
+                        \Filament\Infolists\Components\TextEntry::make('catatan_revisi')
+                            ->label('Catatan Revisi')
+                            ->columnSpanFull()
+                            ->visible(fn ($record) => !empty($record->catatan_revisi)),
+                    ])->columns(3),
+
+                \Filament\Infolists\Components\Section::make('Berkas Gambar Hasil Design')
+                    ->schema([
+                        \Filament\Infolists\Components\ImageEntry::make('file_path')
+                            ->label('File Design Final')
+                            ->height(200)
+                            ->extraAttributes(fn ($record) => [
+                                'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700',
+                                'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->file_path) . '" })',
+                            ]),
+
+                        \Filament\Infolists\Components\ImageEntry::make('gerobak_depan')
+                            ->label('Mockup Gerobak Depan')
+                            ->height(200)
+                            ->extraAttributes(fn ($record) => [
+                                'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700',
+                                'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->gerobak_depan) . '" })',
+                            ]),
+
+                        \Filament\Infolists\Components\ImageEntry::make('gerobak_kiri')
+                            ->label('Mockup Gerobak Kiri')
+                            ->height(200)
+                            ->extraAttributes(fn ($record) => [
+                                'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700',
+                                'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->gerobak_kiri) . '" })',
+                            ]),
+
+                        \Filament\Infolists\Components\ImageEntry::make('gerobak_kanan')
+                            ->label('Mockup Gerobak Kanan')
+                            ->height(200)
+                            ->extraAttributes(fn ($record) => [
+                                'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700',
+                                'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->gerobak_kanan) . '" })',
+                            ]),
+                    ])->columns(2),
+            ]);
+    }
+
+    // ... Batas awal method table() kamu ...
 
     public static function getPages(): array
     {
