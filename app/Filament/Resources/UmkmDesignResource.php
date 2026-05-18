@@ -108,7 +108,7 @@ Forms\Components\Select::make('kota_id')
                             ->label('UMKM')
                             ->relationship('umkm', 'nama_usaha')
                             ->placeholder(fn (Forms\Get $get) =>
-                                $get('kota_id') ? 'Pilih UMKM' : 'Pilih kota terlebih dahulu'
+                                $get('kota_id') ? 'Pilih UMKM' : 'Pilih UMKM terlebih dahulu'
                             )
                             ->options(function (Forms\Get $get) {
                                 $kotaId = $get('kota_id');

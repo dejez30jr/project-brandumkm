@@ -6,6 +6,7 @@ use App\Models\Umkm;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Support\HtmlString;
 
 class SummaryPerKotaWidget extends BaseWidget {
     protected static ?string $heading = 'PENGAJUAN TERBARU';
@@ -23,14 +24,64 @@ class SummaryPerKotaWidget extends BaseWidget {
             ->limit( 10 ) 
         )
 
-        // tombol lihat semua
-        ->headerActions( [
-            Tables\Actions\Action::make( 'lihat_semua' )
-            ->label( 'Lihat Semua' )
-            ->url( route( 'filament.admin.resources.umkms.index' ) )
-            ->color( 'primary' )
-            ->icon( 'heroicon-m-arrow-right' ),
-        ] )
+        // tombol lihat semua + Injeksi CSS Murni untuk modifikasi tampilan Table Header
+      // tombol lihat semua + Injeksi CSS Murni untuk modifikasi tampilan Table Header
+->headerActions( [
+    // 1. INJEKSI CSS MURNI (Disembunyikan secara visual, hanya memuat style)
+    Tables\Actions\Action::make('custom_css_injector')
+        ->label('')
+        ->disabled()
+        ->extraAttributes([
+            'style' => 'display: none !important; padding: 0 !important; margin: 0 !important;'
+        ])
+        ->icon(fn () => new HtmlString('
+            <style>
+                /* Mewarnai Latar Belakang & Teks Header Tabel */
+                .fi-ta-table thead, 
+                .fi-ta-table thead tr {
+                    background-color: #ea580c !important; /* Warna Oranye Filament */
+                }
+                
+                /* Memaksa text th menjadi putih bersih, tebal, dan kontras */
+                .fi-ta-table thead th span,
+                .fi-ta-table thead th {
+                    color: #ffffff !important;
+                    font-weight: 700 !important;
+                    letter-spacing: 0.05em !important;
+                }
+
+                /* Kustomisasi Tombol "Lihat Semua" agar serasi dengan Oranye (Dark Charcoal Style) */
+                .btn-lihat-semua-custom {
+                    background-color: #1e293b !important; /* Slate / Dark Charcoal */
+                    color: #ffffff !important;
+                    border: 1px solid #334155 !important;
+                    border-radius: 8px !important;
+                    padding: 6px 14px !important;
+                    transition: all 0.2s ease-in-out !important;
+                }
+
+                .btn-lihat-semua-custom:hover {
+                    background-color: #334155 !important; /* Lebih terang saat di-hover */
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                }
+                
+                /* Menghilangkan border default gray bawah thead */
+                .fi-ta-header-cell {
+                    border-bottom: none !important;
+                }
+            </style>
+        ')),
+
+    // 2. TOMBOL UTAMA "LIHAT SEMUA"
+    Tables\Actions\Action::make( 'lihat_semua' )
+    ->label( 'Lihat Semua' )
+    ->url( route( 'filament.admin.resources.umkms.index' ) )
+    ->icon( 'heroicon-m-arrow-right' )
+    ->extraAttributes([
+        'class' => 'btn-lihat-semua-custom' // Menyambungkan ke CSS di atas
+    ]),
+] )
 
         ->columns( [
             // USAHA / KOTA
@@ -128,41 +179,14 @@ class SummaryPerKotaWidget extends BaseWidget {
                 ->columns( 2 ),
 
                 // UKURAN PANEL
-                \Filament\Infolists\Components\Section::make( 'Ukuran Panel' )
-                ->schema( [
-                    \Filament\Infolists\Components\TextEntry::make( 'total_area_branding' )
-                    ->label( 'Total Area Branding' ),
-
-                    \Filament\Infolists\Components\TextEntry::make( 'depan_panel_atas_m2' )
-                    ->label( 'Depan Atas' ),
-
-                    \Filament\Infolists\Components\TextEntry::make( 'depan_panel_tengah_m2' )
-                    ->label( 'Depan Tengah' ),
-
-                    \Filament\Infolists\Components\TextEntry::make( 'depan_panel_bawah_m2' )
-                    ->label( 'Depan Bawah' ),
-
-                    \Filament\Infolists\Components\TextEntry::make( 'kanan_panel_atas_m2' )
-                    ->label( 'Kanan Atas' ),
-
-                    \Filament\Infolists\Components\TextEntry::make( 'kanan_panel_tengah_m2' )
-                    ->label( 'Kanan Tengah' ),
-
-                    \Filament\Infolists\Components\TextEntry::make( 'kanan_panel_bawah_m2' )
-                    ->label( 'Kanan Bawah' ),
-
-                    \Filament\Infolists\Components\TextEntry::make( 'kiri_panel_atas_m2' )
-                    ->label( 'Kiri Atas' ),
-
-                    \Filament\Infolists\Components\TextEntry::make( 'kiri_panel_tengah_m2' )
-                    ->label( 'Kiri Tengah' ),
-
-                    \Filament\Infolists\Components\TextEntry::make( 'kiri_panel_bawah_m2' )
-                    ->label( 'Kiri Bawah' ),
-                ] )
-                ->columns( 3 ),
-
-                // FOTO (Diubah ke sistem trigger click Event Lightbox)
+\Filament\Infolists\Components\Section::make('Ukuran Panel')
+    ->schema([
+        // Gunakan ViewEntry kustom untuk merender tabel HTML murni
+        \Filament\Infolists\Components\ViewEntry::make('ukuran_panel_table')
+            ->view('filament.infolists.components.tabel-panel')
+            ->columnSpanFull(),
+    ]),
+                // FOTO
                 \Filament\Infolists\Components\Section::make( 'Foto' )
                 ->schema( [
                     \Filament\Infolists\Components\ImageEntry::make( 'foto_depan' )
@@ -188,10 +212,17 @@ class SummaryPerKotaWidget extends BaseWidget {
                         'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
                         'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_kiri) . '" })',
                     ]),
+                    \Filament\Infolists\Components\ImageEntry::make( 'foto_plang_alfamart' )
+                    ->label( 'Foto Plang Alfamart' )
+                    ->height( 200 )
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_kiri) . '" })',
+                    ]),
                 ] )
-                ->columns( 3 ), // Diubah ke 3 agar sebaris rapi
+                ->columns( 3 ),
 
-                // DESIGN GEROBAK (Diubah ke sistem trigger click Event Lightbox)
+                // DESIGN GEROBAK
                 \Filament\Infolists\Components\Section::make('Design Gerobak')
                 ->description('Design final dan tampak gerobak yang sudah disetujui.')
                 ->icon('heroicon-o-paint-brush')
@@ -233,7 +264,7 @@ class SummaryPerKotaWidget extends BaseWidget {
                     ])
                     ->visible(fn ($record) => !empty($record->design_gerobak_kanan)),
                 ])
-                ->columns(3) // Diubah ke 3 agar simetris di layout web m2 screen
+                ->columns(3)
                 ->collapsible() 
                 ->visible(fn ($record) =>
                     !empty($record->design_final) ||

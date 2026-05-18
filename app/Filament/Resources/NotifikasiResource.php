@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Database\Eloquent\Builder; // JANGAN LUPA IMPORT INI
 
 class NotifikasiResource extends Resource
 {
@@ -34,10 +35,22 @@ class NotifikasiResource extends Resource
         $user = auth()->user();
         if (!$user) return null;
         
-        // Hitung notifikasi yang belum dibaca oleh USER YANG SEDANG LOGIN SAJA
-        $unreadCount = Notifikasi::whereDoesntHave('users', function ($query) use ($user) {
+        // ====================================================================
+        // PERBAIKAN BADGE: Filter badge sesuai role agar jumlah titik merah sinkron
+        // ====================================================================
+        $query = Notifikasi::whereDoesntHave('users', function ($query) use ($user) {
             $query->where('user_id', $user->id);
-        })->count();
+        });
+
+        if ($user->role === 'design') {
+            $query->whereIn('judul', ['UMKM Perlu Design', 'Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
+        } elseif ($user->role === 'client') {
+            $query->whereIn('judul', ['Design Baru Upload', 'Desain Telah Direvisi 🎨']);
+        } elseif ($user->role === 'pic_lapangan') {
+            $query->whereIn('judul', ['UMKM Baru Masuk', 'Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
+        }
+
+        $unreadCount = $query->count();
 
         return $unreadCount > 0 ? '●' : null;
     }
@@ -57,23 +70,29 @@ class NotifikasiResource extends Resource
     public static function table(Table $table): Table
     {
         $user = auth()->user();
+        $userRole = $user?->role;
 
         if ($user) {
-            // ================= LOGIKA UTAMA PERBAIKAN =================
-            // Ambil semua notifikasi yang BELUM dibaca oleh user yang sedang login saat ini
-            $unreadNotifications = Notifikasi::whereDoesntHave('users', function ($query) use ($user) {
+            // Kita kumpulkan notifikasi yang belum dibaca sesuai role dulu agar sinkron saat dibaca otomatis
+            $unreadQuery = Notifikasi::whereDoesntHave('users', function ($query) use ($user) {
                 $query->where('user_id', $user->id);
-            })->get();
+            });
 
-            // Masukkan data ke tabel pivot (notifikasi_user) agar ditandai sudah dibaca oleh user ini saja
+            if ($userRole === 'design') {
+                $unreadQuery->whereIn('judul', ['UMKM Perlu Design', 'Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
+            } elseif ($userRole === 'client') {
+                $unreadQuery->whereIn('judul', ['Design Baru Upload', 'Desain Telah Direvisi 🎨']);
+            } elseif ($userRole === 'pic_lapangan') {
+                $unreadQuery->whereIn('judul', ['UMKM Baru Masuk', 'Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
+            }
+
+            $unreadNotifications = $unreadQuery->get();
+
             foreach ($unreadNotifications as $notif) {
-                // Gunakan relasi 'users' di model Notifikasi kamu untuk melakukan attach id user
-                // Pastikan di model App\Models\Notifikasi kamu sudah ada method: public function users() { return $this->belongsToMany(User::class, 'notifikasi_user'); }
                 if (method_exists($notif, 'users')) {
                     $notif->users()->syncWithoutDetaching([$user->id]);
                 }
             }
-            // ==========================================================
         }
 
         // 1. Ambil ID terakhir yang sudah dilihat user dari session
@@ -88,6 +107,24 @@ class NotifikasiResource extends Resource
         }
 
         return $table
+            // ====================================================================
+            // LOGIKA FILTER ROLE: Membatasi data tabel berdasarkan role user
+            // ====================================================================
+            ->modifyQueryUsing(function (Builder $query) use ($userRole) {
+                if ($userRole === 'design') {
+                    // Desainer hanya melihat antrean design baru dan permintaan revisi
+                    $query->whereIn('judul', ['UMKM Perlu Design', 'Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
+                } 
+                elseif ($userRole === 'client') {
+                    // Client hanya melihat hasil upload design baru atau design pasca-revisi
+                    $query->whereIn('judul', ['Design Baru Upload', 'Desain Telah Direvisi 🎨']);
+                } 
+                elseif ($userRole === 'pic_lapangan') {
+                    // PIC melihat umkm baru masuk dan tahu jika ada design yang butuh revisi di lapangan
+                    $query->whereIn('judul', ['UMKM Baru Masuk', 'Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
+                }
+                // Jika role-nya 'admin', kita biarkan (tidak masuk if manapun) sehingga memunculkan semua data.
+            })
             ->columns([
                 Tables\Columns\TextColumn::make('judul')
                     ->searchable()

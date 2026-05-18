@@ -14,8 +14,10 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -340,10 +342,17 @@ public static function canDelete($record): bool
                      // Info minimum area
         Forms\Components\Placeholder::make('info_minimum')
             ->label('')
-            ->content(new \Illuminate\Support\HtmlString(
-                '<span class="text-warning-600 font-semibold">Minimum total area branding: 1.5 M²</span>'
-            )),
-
+            // tambahin keterangan jika data ukuran tidak ada cukup isi 0
+         ->content(new \Illuminate\Support\HtmlString('
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span style="color: #facc15 !important; font-weight: 600; font-size: 0.85rem;">
+            ⚠️ Jika tidak ada ukuran panel, isi dengan 0 (nol)
+        </span>
+        <span style="color: #facc15 !important; font-weight: 600; font-size: 0.85rem;">
+            📐 Minimum total area branding: 1.5 M²
+        </span>
+    </div>
+')),
 
         // ========== PANEL DEPAN ==========
         Forms\Components\Section::make('Panel Depan')
@@ -361,11 +370,13 @@ public static function canDelete($record): bool
                         Forms\Components\TextInput::make('depan_atas_w')
                             ->required()
                             ->label('W (cm)')
+                             ->placeholder('contoh:100../0')
                             ->numeric()
                             ->live(onBlur: true),
                         Forms\Components\TextInput::make('depan_atas_h')
                             ->label('H (cm)')
                             ->required()
+                             ->placeholder('contoh:100../0')
                             ->numeric()
                             ->live(onBlur: true),
                     ]),
@@ -381,10 +392,12 @@ public static function canDelete($record): bool
                             ->label('W (cm)')
                             ->required()
                             ->numeric()
+                             ->placeholder('contoh:100../0')
                             ->live(onBlur: true),
                         Forms\Components\TextInput::make('depan_tengah_h')
                             ->label('H (cm)')
                             ->numeric()
+                             ->placeholder('contoh:100../0')
                             ->required()
                             ->live(onBlur: true),
                     ]),
@@ -399,12 +412,14 @@ public static function canDelete($record): bool
                         Forms\Components\TextInput::make('depan_bawah_w')
                             ->label('W (cm)')
                             ->required()
+                             ->placeholder('contoh:100../0')
                             ->numeric()
                             ->live(onBlur: true),
                         Forms\Components\TextInput::make('depan_bawah_h')
                             ->label('H (cm)')
                             ->required()
                             ->numeric()
+                            ->placeholder('contoh:100../0')
                             ->live(onBlur: true),
                     ]),
                 Forms\Components\Hidden::make('depan_panel_bawah_m2'),
@@ -428,11 +443,13 @@ public static function canDelete($record): bool
                         Forms\Components\TextInput::make('kanan_atas_w')
                             ->label('W (cm)')
                             ->required()
+                             ->placeholder('contoh:100../0')
                             ->numeric()
                             ->live(onBlur: true),
                         Forms\Components\TextInput::make('kanan_atas_h')
                             ->label('H (cm)')
                             ->numeric()
+                             ->placeholder('contoh:100../0')
                             ->required()
                             ->live(onBlur: true),
                     ]),
@@ -447,11 +464,13 @@ public static function canDelete($record): bool
                         Forms\Components\TextInput::make('kanan_tengah_w')
                             ->label('W (cm)')
                             ->required()
+                             ->placeholder('contoh:100../0')
                             ->numeric()
                             ->live(onBlur: true),
                         Forms\Components\TextInput::make('kanan_tengah_h')
                             ->label('H (cm)')
                             ->numeric()
+                             ->placeholder('contoh:100../0')
                             ->required()
                             ->live(onBlur: true),
                     ]),
@@ -466,11 +485,13 @@ public static function canDelete($record): bool
                         Forms\Components\TextInput::make('kanan_bawah_w')
                             ->label('W (cm)')
                             ->numeric()
+                             ->placeholder('contoh:100../0')
                             ->required()
                             ->live(onBlur: true),
                         Forms\Components\TextInput::make('kanan_bawah_h')
                             ->label('H (cm)')
                             ->numeric()
+                             ->placeholder('contoh:100../0')
                             ->required()
                             ->live(onBlur: true),
                     ]),
@@ -494,11 +515,13 @@ public static function canDelete($record): bool
                             ->content('Bagian Atas'),
                         Forms\Components\TextInput::make('kiri_atas_w')
                             ->label('W (cm)')
+                            ->placeholder('contoh:100../0')
                             ->numeric()
                             ->required()
                             ->live(onBlur: true),
                         Forms\Components\TextInput::make('kiri_atas_h')
                             ->label('H (cm)')
+                             ->placeholder('contoh:100../0')
                             ->numeric()
                             ->required()
                             ->live(onBlur: true),
@@ -514,11 +537,13 @@ public static function canDelete($record): bool
                         Forms\Components\TextInput::make('kiri_tengah_w')
                             ->label('W (cm)')
                             ->numeric()
+                             ->placeholder('contoh:100../0')
                             ->required()
                             ->live(onBlur: true),
                         Forms\Components\TextInput::make('kiri_tengah_h')
                             ->label('H (cm)')
                             ->numeric()
+                             ->placeholder('contoh:100../0')
                             ->required()
                             ->live(onBlur: true),
                     ]),
@@ -533,11 +558,13 @@ public static function canDelete($record): bool
                         Forms\Components\TextInput::make('kiri_bawah_w')
                             ->label('W (cm)')
                             ->required()
+                             ->placeholder('contoh:100../0')
                             ->numeric()
                             ->live(onBlur: true),
                         Forms\Components\TextInput::make('kiri_bawah_h')
                             ->label('H (cm)')
                             ->numeric()
+                             ->placeholder('contoh:100../0')
                             ->required()
                             ->live(onBlur: true),
                     ]),
@@ -797,42 +824,14 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
             ])
             ->columns(2),
 
-        // UKURAN PANEL
-        \Filament\Infolists\Components\Section::make('Ukuran Panel')
-            ->schema([
-
-                \Filament\Infolists\Components\TextEntry::make('total_area_branding')
-                    ->label('Total Area Branding'),
-
-                \Filament\Infolists\Components\TextEntry::make('depan_panel_atas_m2')
-                    ->label('Depan Atas'),
-
-                \Filament\Infolists\Components\TextEntry::make('depan_panel_tengah_m2')
-                    ->label('Depan Tengah'),
-
-                \Filament\Infolists\Components\TextEntry::make('depan_panel_bawah_m2')
-                    ->label('Depan Bawah'),
-
-                \Filament\Infolists\Components\TextEntry::make('kanan_panel_atas_m2')
-                    ->label('Kanan Atas'),
-
-                \Filament\Infolists\Components\TextEntry::make('kanan_panel_tengah_m2')
-                    ->label('Kanan Tengah'),
-
-                \Filament\Infolists\Components\TextEntry::make('kanan_panel_bawah_m2')
-                    ->label('Kanan Bawah'),
-
-                \Filament\Infolists\Components\TextEntry::make('kiri_panel_atas_m2')
-                    ->label('Kiri Atas'),
-
-                \Filament\Infolists\Components\TextEntry::make('kiri_panel_tengah_m2')
-                    ->label('Kiri Tengah'),
-
-                \Filament\Infolists\Components\TextEntry::make('kiri_panel_bawah_m2')
-                    ->label('Kiri Bawah'),
-
-            ])
-            ->columns(3),
+       // UKURAN PANEL
+\Filament\Infolists\Components\Section::make('Ukuran Panel')
+    ->schema([
+        // Gunakan ViewEntry kustom untuk merender tabel HTML murni
+        \Filament\Infolists\Components\ViewEntry::make('ukuran_panel_table')
+            ->view('filament.infolists.components.tabel-panel')
+            ->columnSpanFull(),
+    ]),
 // FOTO
 \Filament\Infolists\Components\Section::make('Foto')
     ->schema([
@@ -944,7 +943,7 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
                     ->requiresConfirmation()
                     ->visible(fn (Umkm $record) => 
                         $record->status === 'pending' && 
-                        (auth()->user()->isClient() || auth()->user()->isPicLapangan())
+                        (auth()->user()->isClient())
                     )
                     ->action(function (Umkm $record) {
                         $record->update([
