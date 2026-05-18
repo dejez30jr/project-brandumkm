@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Resources\UmkmDesignResource;
 use App\Filament\Resources\UmkmResource;
 use App\Models\Umkm;
 use Filament\Tables;
@@ -62,7 +63,7 @@ class UmkmPerluDesignTableWidget extends BaseWidget
                     ->label('Proses Design')
                     ->icon('heroicon-m-paint-brush')
                     ->color('warning')
-                    ->url(fn (Umkm $record): string => UmkmResource::getUrl('edit', ['record' => $record])),
+                    ->url(fn (Umkm $record): string => UmkmDesignResource::getUrl('create', ['record' =>  $record->umkmDesign->id ?? null, 'umkm' => $record->id])),
             ]);
     }
 

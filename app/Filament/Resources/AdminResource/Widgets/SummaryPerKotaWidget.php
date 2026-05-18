@@ -118,6 +118,31 @@ class SummaryPerKotaWidget extends BaseWidget {
             ->modalHeading( fn ( $record ) => $record->nama_usaha )
             ->infolist( [
 
+            // 2. Menampilkan Alasan Reject dengan CSS Murni (Inline Styles)
+\Filament\Infolists\Components\TextEntry::make('alasan_reject')
+    ->label('Alasan Penolakan (Reject)')
+    ->placeholder('Tidak ada alasan tertulis.')
+    ->color('danger')
+    ->weight('bold')
+    ->icon('heroicon-m-exclamation-triangle')
+    ->iconColor('danger')
+    
+    // KUNCI UTAMA: Menggunakan CSS Murni / Inline Styles
+    ->extraAttributes([
+        'style' => '
+            margin-top: 8px;
+            padding: 16px;
+            background-color: rgba(239, 68, 68, 0.08); /* Warna merah transparan soft */
+            border-left: 4px solid #ef4444;            /* Garis vertikal merah tegas */
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            white-space: normal;
+            word-break: break-word;
+        '
+    ])
+    ->visible(fn ($record) => $record?->status === 'rejected'),
+
                 // =========================================================================
                 // INJEKSI LIGHTBOX POPUP COMPONENT (Stanby mendengarkan klik pada gambar)
                 // =========================================================================

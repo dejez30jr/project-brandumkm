@@ -45,9 +45,9 @@ class NotifikasiResource extends Resource
         if ($user->role === 'design') {
             $query->whereIn('judul', ['UMKM Perlu Design', 'Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
         } elseif ($user->role === 'client') {
-            $query->whereIn('judul', ['Design Baru Upload', 'Desain Telah Direvisi 🎨']);
+            $query->whereIn('judul', ['UMKM Baru Masuk','Design Baru Upload', 'Desain Telah Direvisi 🎨']);
         } elseif ($user->role === 'pic_lapangan') {
-            $query->whereIn('judul', ['UMKM Baru Masuk', 'Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
+            $query->whereIn('judul', ['Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
         }
 
         $unreadCount = $query->count();
@@ -81,9 +81,9 @@ class NotifikasiResource extends Resource
             if ($userRole === 'design') {
                 $unreadQuery->whereIn('judul', ['UMKM Perlu Design', 'Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
             } elseif ($userRole === 'client') {
-                $unreadQuery->whereIn('judul', ['Design Baru Upload', 'Desain Telah Direvisi 🎨']);
+                $unreadQuery->whereIn('judul', ['UMKM Baru Masuk','Design Baru Upload', 'Desain Telah Direvisi 🎨']);
             } elseif ($userRole === 'pic_lapangan') {
-                $unreadQuery->whereIn('judul', ['UMKM Baru Masuk', 'Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
+                $unreadQuery->whereIn('judul', ['Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
             }
 
             $unreadNotifications = $unreadQuery->get();
@@ -117,11 +117,11 @@ class NotifikasiResource extends Resource
                 } 
                 elseif ($userRole === 'client') {
                     // Client hanya melihat hasil upload design baru atau design pasca-revisi
-                    $query->whereIn('judul', ['Design Baru Upload', 'Desain Telah Direvisi 🎨']);
+                    $query->whereIn('judul', ['UMKM Baru Masuk','Design Baru Upload', 'Desain Telah Direvisi 🎨']);
                 } 
                 elseif ($userRole === 'pic_lapangan') {
                     // PIC melihat umkm baru masuk dan tahu jika ada design yang butuh revisi di lapangan
-                    $query->whereIn('judul', ['UMKM Baru Masuk', 'Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
+                    $query->whereIn('judul', ['UMKM Baru Masuk']);
                 }
                 // Jika role-nya 'admin', kita biarkan (tidak masuk if manapun) sehingga memunculkan semua data.
             })
@@ -161,7 +161,11 @@ class NotifikasiResource extends Resource
                 }
 
                 return match ($record->judul) {
-                    'UMKM Baru Masuk' => UmkmResource::getUrl('index'),
+                    'UMKM Baru Masuk' => UmkmResource::getUrl('index', [
+                        'tableFilters' => [
+                            'status' => ['value' => 'pending'],
+                        ],
+                    ]),
                     'Design Baru Upload' => UmkmDesignResource::getUrl('index', [
                         'tableFilters' => [
                             'status' => ['value' => 'pending'],

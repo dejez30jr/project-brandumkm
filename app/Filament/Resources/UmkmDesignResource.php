@@ -127,6 +127,18 @@ Forms\Components\Select::make('kota_id')
                             ->searchable()
                             ->preload()
                             ->required()
+                            // ====================================================================
+    // TAMBAHAN VALIDASI: Mencegah Penginputan Ganda untuk UMKM yang Sama
+    // ====================================================================
+    ->unique(
+        table: 'umkm_designs',     // Nama tabel database Anda
+        column: 'umkm_id',          // Nama kolom yang harus unik di tabel tersebut
+        ignorable: fn ($record) => $record // Mengabaikan id data ini sendiri sewaktu Edit Mode
+    )
+    // Custom pesan error agar informatif bagi Team Design
+    ->validationMessages([
+        'unique' => 'UMKM ini sudah memiliki data desain. Mohon pilih UMKM lain atau edit data yang sudah ada.',
+    ])
                             ->default(request()->query('umkm'))
                             ->disabled(fn (Forms\Get $get) => ! $get('kota_id'))
                             ->live(),
