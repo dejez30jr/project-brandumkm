@@ -5,10 +5,19 @@ namespace App\Filament\Pages;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Response;
 use Filament\Notifications\Notification;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Form;
+use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Section;
+use App\Models\Kota;
 use ZipArchive;
 
-class BackupPage extends Page
+class BackupPage extends Page implements HasForms
 {
+    use InteractsWithForms;
+
     protected static ?string $navigationIcon = 'heroicon-o-arrow-down-tray';
     protected static ?string $navigationLabel = 'Backup Data';
     protected static ?string $title = 'Backup Management';
@@ -16,7 +25,9 @@ class BackupPage extends Page
 
     protected static string $view = 'filament.pages.backup-page';
 
-    // Batasi akses secara ketat: Hanya ADMIN yang bisa melihat menu ini
+    // State form
+    public ?array $data = [];
+
     public static function shouldRegisterNavigation(): bool
     {
         return auth()->user()?->role === 'admin';
@@ -27,18 +38,61 @@ class BackupPage extends Page
         if (auth()->user()?->role !== 'admin') {
             abort(403);
         }
+
+        // Initialize form default state
+        $this->form->fill([
+            'backup_type' => 'all',
+        ]);
     }
 
-    // Fungsi Utama: Membuat file ZIP berisi Database SQL & Semua File Upload (Gambar/Video)
+    // Mendefinisikan Form Filter di Halaman Backup
+    public function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Section::make('Filter Ruang Lingkup Backup')
+                    ->description('Tentukan data mana saja yang ingin Anda amankan ke dalam file ZIP.')
+                    ->schema([
+                        Radio::make('backup_type')
+                            ->label('Tipe Backup')
+                            ->options([
+                                'all' => 'Backup Semua Data',
+                                'city' => 'Backup Parsial (Per Kota)',
+                            ])
+                            ->live() // Memicu perubahan form secara realtime
+                            ->required(),
+
+                        Select::make('kota_id')
+                            ->label('Pilih Kota')
+                            ->placeholder('Pilih kota target backup')
+                            ->options(Kota::orderBy('nama')->pluck('nama', 'id'))
+                            ->searchable()
+                            ->preload()
+                            // Hanya muncul jika admin memilih opsi 'city'
+                            ->visible(fn ($get) => $get('backup_type') === 'city')
+                            // Wajib diisi jika tipe backup adalah per kota
+                            ->required(fn ($get) => $get('backup_type') === 'city'),
+                    ])
+            ])
+            ->statePath('data');
+    }
+
+    // Fungsi Utama yang dimodifikasi
     public function downloadBackup()
     {
-        $zipFileName = 'backup_hanzi_' . date('Y-m-d_H-i-s') . '.zip';
+        // Validasi form terlebih dahulu
+        $formData = $this->form->getState();
+        $backupType = $formData['backup_type'];
+        $kotaId = $formData['kota_id'] ?? null;
+
+        $suffix = $backupType === 'city' && $kotaId ? '_kota_' . $kotaId : '_all';
+        $zipFileName = 'backup_hanzi' . $suffix . '_' . date('Y-m-d_H-i-s') . '.zip';
         $zipPath = storage_path('app/' . $zipFileName);
 
         $zip = new ZipArchive;
         if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
             
-            // 1. Ambil File Upload di folder storage/app/public (Gambar & Video)
+            // 1. Ambil File Upload di folder storage/app/public
             $filesPath = storage_path('app/public');
             if (file_exists($filesPath)) {
                 $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($filesPath));
@@ -51,7 +105,7 @@ class BackupPage extends Page
                 }
             }
 
-            // 2. Dump Database MySQL langsung ke dalam ZIP (Sesuai Konfigurasi .env Anda)
+            // 2. Dump Database MySQL (Sesuai Konfigurasi .env Anda)
             $dbName = config('database.connections.mysql.database');
             $dbUser = config('database.connections.mysql.username');
             $dbPass = config('database.connections.mysql.password');
@@ -59,8 +113,18 @@ class BackupPage extends Page
             
             $sqlDumpPath = storage_path('app/database_backup.sql');
             
-            // Perintah standar mysqldump
-            $command = "mysqldump --user={$dbUser} --password={$dbPass} --host={$dbHost} {$dbName} > {$sqlDumpPath}";
+            // LOGIKA KONDISIONAL MYSQLDUMP
+            if ($backupType === 'city' && $kotaId) {
+                // Trik: mem-backup tabel UMKM & Desain yang hanya berelasi dengan kota_id terpilih
+                // Silakan sesuaikan nama tabel dan foreign key milik aplikasi Anda di bawah ini
+                $command = "mysqldump --user={$dbUser} --password={$dbPass} --host={$dbHost} {$dbName} " .
+                           "--where=\"kota_id={$kotaId}\" umkms " . // Asumsi nama tabel: umkms
+                           "> {$sqlDumpPath}";
+            } else {
+                // Perintah standar full backup
+                $command = "mysqldump --user={$dbUser} --password={$dbPass} --host={$dbHost} {$dbName} > {$sqlDumpPath}";
+            }
+            
             exec($command);
 
             if (file_exists($sqlDumpPath)) {
@@ -69,17 +133,16 @@ class BackupPage extends Page
 
             $zip->close();
 
-            // Hapus file sementara sql dump setelah dimasukkan ke zip
+            // Hapus file sementara setelah dimasukkan ke zip
             if (file_exists($sqlDumpPath)) {
                 unlink($sqlDumpPath);
             }
 
             Notification::make()
-                ->title('Backup Berhasil Dibuat!')
+                ->title('Backup ' . ($backupType === 'city' ? 'Per Kota' : 'Semua') . ' Berhasil Dibuat!')
                 ->success()
                 ->send();
 
-            // Lakukan download otomatis ke browser dan hapus file zip di server agar tidak penuh
             return Response::download($zipPath)->deleteFileAfterSend(true);
         }
 

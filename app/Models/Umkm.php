@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\UmkmStiker;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -86,6 +87,12 @@ class Umkm extends Model
             'design_gerobak_depan',
             'design_gerobak_kiri',
             'design_gerobak_kanan',
+
+    // last final umkm terbranding 
+            'stiker_tampak_depan',
+            'stiker_tampak_kanan',
+            'stiker_tampak_kiri',
+            'foto_wide',
     ];
 
     protected $casts = [
@@ -179,6 +186,13 @@ class Umkm extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
+
+    // Relasi ke UmkmDesign dan AfterBranding   
+   
+    public function umkmStiker(): HasOne
+    {
+        return $this->hasOne(UmkmStiker::class);
+    }
 
     public function designs(): HasMany
     {

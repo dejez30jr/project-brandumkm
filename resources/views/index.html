@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Design Team Dashboard - Gerobak Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e6bdb9;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "surface": "#f8f9ff",
+                        "primary-fixed-dim": "#ffb3ad",
+                        "on-surface": "#0b1c30",
+                        "tertiary-fixed": "#ffe324",
+                        "surface-dim": "#cbdbf5",
+                        "on-primary-fixed": "#410003",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-tertiary-container": "#494000",
+                        "primary-fixed": "#ffdad6",
+                        "outline": "#926f6b",
+                        "on-tertiary-fixed": "#211c00",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface-container-lowest": "#ffffff",
+                        "error": "#ba1a1a",
+                        "primary-container": "#e12029",
+                        "on-secondary-fixed-variant": "#364669",
+                        "surface-variant": "#d3e4fe",
+                        "surface-container-high": "#dce9ff",
+                        "primary": "#b90018",
+                        "inverse-primary": "#ffb3ad",
+                        "on-primary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "background": "#f8f9ff",
+                        "on-surface-variant": "#5d3f3d",
+                        "outline-variant": "#e6bdb9",
+                        "surface-bright": "#f8f9ff",
+                        "on-primary-fixed-variant": "#930010",
+                        "secondary-container": "#c4d4fe",
+                        "on-primary-container": "#fff9f8",
+                        "secondary-fixed-dim": "#b6c6f0",
+                        "on-secondary-fixed": "#071b3b",
+                        "surface-tint": "#c00019",
+                        "tertiary-container": "#c2ac00",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed-dim": "#e1c700",
+                        "on-tertiary-fixed-variant": "#514700",
+                        "surface-container": "#e5eeff",
+                        "surface-container-low": "#eff4ff",
+                        "secondary-fixed": "#d8e2ff",
+                        "secondary": "#4e5e82",
+                        "tertiary": "#6c5e00",
+                        "on-background": "#0b1c30",
+                        "on-secondary-container": "#4b5b7f",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "container-padding-mobile": "16px",
+                        "container-padding-desktop": "32px",
+                        "stack-sm": "4px",
+                        "stack-md": "12px",
+                        "stack-lg": "24px",
+                        "gutter": "24px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "code-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "code-md": ["13px", {"lineHeight": "18px", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-xl": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md overflow-hidden">
+<!-- Fixed Side Navigation -->
+<aside class="fixed left-0 top-0 h-full w-[280px] bg-surface border-r border-outline-variant flex flex-col p-stack-md hidden md:flex">
+<div class="mb-stack-lg px-4">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Gerobak Management</h1>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Branding System</p>
+</div>
+<nav class="flex-grow space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+<span class="font-body-md">Data Survey</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary-container text-on-secondary-container rounded-lg font-bold" href="#">
+<span class="material-symbols-outlined" data-icon="edit_square">edit_square</span>
+<span class="font-body-md">Review Desain</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="factory">factory</span>
+<span class="font-body-md">Produksi</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-body-md">Manajemen Pengguna</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md">Pengaturan</span>
+</a>
+</nav>
+<button class="mt-stack-lg mx-4 py-3 px-6 bg-primary text-on-primary rounded-xl font-bold flex items-center justify-center gap-2 shadow-sm hover:brightness-110 transition-all"><span class="material-symbols-outlined" data-icon="add">add</span> Survey Baru</button>
+<div class="mt-auto border-t border-outline-variant pt-stack-md space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-body-md">Bantuan</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-body-md">Keluar</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-0 md:ml-[280px] h-screen flex flex-col">
+<!-- Top Navigation -->
+<header class="flex justify-between items-center h-16 px-container-padding-mobile md:px-container-padding-desktop w-full bg-surface-container-lowest border-b border-outline-variant sticky top-0 z-40 shadow-sm">
+<div class="flex items-center gap-4">
+<span class="md:hidden material-symbols-outlined p-2" data-icon="menu">menu</span>
+<h2 class="font-headline-md text-headline-md font-extrabold text-primary hidden md:block">Dashboard Tim Desain</h2>
+</div>
+<div class="flex items-center gap-gutter">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-full text-body-md focus:outline-none focus:ring-2 focus:ring-primary w-64" placeholder="Cari tugas..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<div class="hover:bg-surface-container rounded-full p-2 cursor-pointer transition-transform active:scale-90">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+</div>
+<div class="hover:bg-surface-container rounded-full p-2 cursor-pointer transition-transform active:scale-90">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="chat_bubble">chat_bubble</span>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-primary-container overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A professional portrait of a male designer in a creative studio setting. He is wearing a modern charcoal sweater and spectacles, looking directly at the camera with a confident yet approachable expression. The background is softly blurred, showing glimpses of design tools and monitors, maintaining a high-key, clean aesthetic with neutral colors and professional office lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9ZJSOeuq2oJy0OvIQH47U0IXeVIzHzpogj8vlqK5nMJRVUXnkGfV5QZ0ZrfWqInAH-069kXa-4QayZc8VQZC1kQiyeHqg1Hhf5RfaffIpAniqpBiR14JtXku3LmRSPljRfjA7xd3PBf40rRFvK2Am7B2VIVzn8x1pcfQxVV2Z4r95ELe8Jj8KPvAerOhhvPKB9aH5zPGzPoz1G_LJgJhQfKj7jY6FYlRUmb3rSfbY_AkWbVpAOGkpjvKpNgDBsvKq9wWTjmuTQJKN"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="flex-grow overflow-y-auto custom-scrollbar p-container-padding-mobile md:p-container-padding-desktop">
+<!-- Bento Layout for Stats and Upload -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter mb-stack-lg">
+<!-- Stats Summary -->
+<div class="lg:col-span-8 grid grid-cols-2 md:grid-cols-4 gap-stack-md">
+<div class="bg-surface-container-lowest p-stack-md border border-outline-variant rounded-xl flex flex-col justify-between">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined" data-icon="pending_actions">pending_actions</span>
+<span class="font-label-md text-label-md uppercase">ANTREAN</span>
+</div>
+<div class="mt-4">
+<span class="text-3xl font-bold text-on-surface">14</span>
+<p class="text-xs text-on-surface-variant">Menunggu Desain</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-stack-md border border-outline-variant rounded-xl flex flex-col justify-between">
+<div class="flex items-center gap-2 text-error">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+<span class="font-label-md text-label-md uppercase">REVISI</span>
+</div>
+<div class="mt-4">
+<span class="text-3xl font-bold text-on-surface">06</span>
+<p class="text-xs text-on-surface-variant">Butuh Tindakan</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-stack-md border border-outline-variant rounded-xl flex flex-col justify-between">
+<div class="flex items-center gap-2 text-secondary">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+<span class="font-label-md text-label-md uppercase">DISETUJUI</span>
+</div>
+<div class="mt-4">
+<span class="text-3xl font-bold text-on-surface">42</span>
+<p class="text-xs text-on-surface-variant">Siap Cetak</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-stack-md border border-outline-variant rounded-xl flex flex-col justify-between">
+<div class="flex items-center gap-2 text-tertiary">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+<span class="font-label-md text-label-md uppercase">KPI</span>
+</div>
+<div class="mt-4">
+<span class="text-3xl font-bold text-on-surface">92%</span>
+<p class="text-xs text-on-surface-variant">Tingkat Keberhasilan</p>
+</div>
+</div>
+</div>
+<!-- Upload Design Mini-Interface -->
+<div class="lg:col-span-4 bg-surface-container-lowest border border-outline-variant rounded-xl p-stack-md shadow-sm">
+<div class="flex items-center justify-between mb-stack-md">
+<h3 class="font-headline-md text-headline-md text-on-surface">Upload Cepat</h3>
+<span class="material-symbols-outlined text-primary cursor-pointer" data-icon="open_in_new">open_in_new</span>
+</div>
+<div class="space-y-3">
+<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg p-2 text-body-md focus:border-primary focus:ring-0">
+<option>Pilih UMKM...</option>
+<option>Bakso Pak Slamet - Jakarta</option>
+<option>Warung Nasi Ibu Ani - Bogor</option>
+<option>Sate Padang Ajo - Bekasi</option>
+</select>
+<div class="border-2 border-dashed border-outline-variant rounded-lg p-4 flex flex-col items-center justify-center gap-2 hover:bg-surface-container transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="cloud_upload">cloud_upload</span>
+<span class="text-xs text-on-surface-variant">Tarik &amp; lepas atau <span class="text-primary font-bold">cari</span></span>
+</div>
+<button class="w-full py-2 bg-primary text-on-primary rounded-lg font-bold text-body-md shadow-sm hover:brightness-110 active:scale-95 transition-all">Kirim untuk Review</button>
+</div>
+</div>
+</div>
+<!-- Task Grid & Revision Queue -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-gutter">
+<!-- Main Task Queue (Approved UMKM waiting) -->
+<div class="xl:col-span-2 space-y-gutter">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<h3 class="font-headline-md text-headline-md text-on-surface">Antrean Revisi</h3>
+<span class="bg-primary-container text-on-primary-container px-2 py-0.5 rounded text-[10px] font-bold">TERBARU</span>
+</div>
+<div class="flex gap-2">
+<button class="p-1 hover:bg-surface-container rounded transition-colors"><span class="material-symbols-outlined text-on-surface-variant" data-icon="filter_list">filter_list</span></button>
+<button class="p-1 hover:bg-surface-container rounded transition-colors"><span class="material-symbols-outlined text-on-surface-variant" data-icon="view_list">view_list</span></button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-lg">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-md transition-shadow group">
+<div class="relative h-40">
+<img alt="UMKM Location" class="w-full h-full object-cover" data-alt="A clean, daytime outdoor photo of a traditional Indonesian street food stall during the survey phase. The stall is located on a paved roadside with clear blue skies in the background. The photo is taken from a three-quarter angle to show the existing branding and structure, with bright natural sunlight casting soft shadows, following a clean corporate documentary style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-YUk6lpKgF3dYsutXTtrJ8JHjXidj92drkBM4eiXfA3KzOFXe6MP19dxfVfMRaYJ7CQ9Ebv7OHC7DNvXJVeWngI33njq55uMCirV2Q1aabCGb2eOp2BZv_zaLJE1_41b3yG6s7VWo979xqDL68uv0-WKuzWM2wMG3DPCzehIa8L0OsOTIba-y5qjDJUHZ6kOMENeUB79INS4FFWvI5lq2B58ZWJPvA5qLjGcoqq6ieuoo-vZViFmL5OaC4ldakhvsXo9G2tedFa9V"/>
+<div class="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-[10px] font-bold text-primary border border-primary/20">SURVEY BARU</div>
+</div>
+<div class="p-stack-md">
+<h4 class="font-headline-md text-primary truncate mb-1">Bakso Pak Slamet</h4>
+<div class="flex items-center gap-2 text-xs text-on-surface-variant mb-4">
+<span class="material-symbols-outlined text-[14px]" data-icon="location_on">location_on</span>
+                                    Jakarta Selatan, Kebayoran
+                                </div>
+<div class="flex justify-between items-center text-xs p-2 bg-surface-container rounded-lg mb-4">
+<span class="text-on-secondary-fixed-variant">Type: Wooden Cart</span>
+<span class="text-on-secondary-fixed-variant font-bold">SLA: 48h</span>
+</div>
+<button class="w-full py-2 border border-primary text-primary hover:bg-primary hover:text-on-primary rounded-lg font-bold transition-all flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]" data-icon="brush">brush</span> Mulai Desain</button>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:shadow-md transition-shadow group">
+<div class="relative h-40">
+<img alt="UMKM Shop" class="w-full h-full object-cover" data-alt="A high-resolution photograph of a vibrant small eatery front in an urban Indonesian setting. The shop has a modest setup with colorful signage and organized seating. The lighting is warm and inviting, late afternoon golden hour style. The overall image has a professional architectural photography feel, emphasizing the branding potential of the space." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSrauW4DStcezlnaENbKWc7Lk0uS84AJA30LgldcIvmhHarHaLpSAS-mDFwlIrQAVONdXTZC6DoQuT9BnBNuVnwd-v1jSw0PUJRB5HCM_gojfdHc4Fv5Hp-ZbhFDEuIhZaW6F4XzxpGQNuNOsg3NhItznJMj90fijCh2L_SlqP7Q7ai3gxOf4uE_yV-MrqK12Yovc_8rBfEU5facMEMBW_ErJNtw__up6GJmbGH2iu1cIlyXiHN2j1BAUXyrIGh9-SbFdgh0wDX-MU"/>
+<div class="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-[10px] font-bold text-primary border border-primary/20">PRIORITAS TINGGI</div>
+</div>
+<div class="p-stack-md">
+<h4 class="font-headline-md text-primary truncate mb-1">Martabak Legit 88</h4>
+<div class="flex items-center gap-2 text-xs text-on-surface-variant mb-4">
+<span class="material-symbols-outlined text-[14px]" data-icon="location_on">location_on</span>
+                                    Bandung, Sukajadi
+                                </div>
+<div class="flex justify-between items-center text-xs p-2 bg-surface-container rounded-lg mb-4">
+<span class="text-on-secondary-fixed-variant">Type: Permanent Stall</span>
+<span class="text-on-secondary-fixed-variant font-bold text-error">SLA: 12h</span>
+</div>
+<button class="w-full py-2 border border-primary text-primary hover:bg-primary hover:text-on-primary rounded-lg font-bold transition-all flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]" data-icon="brush">brush</span> Mulai Desain</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Revision Queue (Side Panel) -->
+<div class="space-y-gutter">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-md text-headline-md text-on-surface">Antrean Revisi</h3>
+<span class="bg-error-container text-on-error-container px-2 py-0.5 rounded-full text-[10px] font-bold">6 ITEM TINDAKAN</span>
+</div>
+<div class="space-y-stack-md">
+<!-- Revision Item 1 -->
+<div class="bg-surface-container-lowest border-l-4 border-l-error border border-outline-variant p-stack-md rounded-r-xl shadow-sm hover:translate-x-1 transition-transform cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="font-bold text-on-surface">Ayam Geprek Juara</span>
+<span class="text-[10px] text-on-surface-variant">2h ago</span>
+</div>
+<p class="text-xs text-on-surface-variant line-clamp-2 italic mb-3">"Logo too small on the main panel. Client wants the Alfamart red to be more dominant in the side graphics..."</p>
+<div class="flex items-center gap-2">
+<span class="bg-error-container/20 text-error px-2 py-1 rounded text-[10px] font-bold">REJECTED BY CLIENT</span>
+<span class="ml-auto material-symbols-outlined text-on-surface-variant hover:text-primary" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+<!-- Revision Item 2 -->
+<div class="bg-surface-container-lowest border-l-4 border-l-error border border-outline-variant p-stack-md rounded-r-xl shadow-sm hover:translate-x-1 transition-transform cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="font-bold text-on-surface">Warteg Berkah</span>
+<span class="text-[10px] text-on-surface-variant">5h ago</span>
+</div>
+<p class="text-xs text-on-surface-variant line-clamp-2 italic mb-3">"Incorrect dimensions for the overhead canopy. Please refer back to the survey measurements..."</p>
+<div class="flex items-center gap-2">
+<span class="bg-error-container/20 text-error px-2 py-1 rounded text-[10px] font-bold">MEASUREMENT ERROR</span>
+<span class="ml-auto material-symbols-outlined text-on-surface-variant hover:text-primary" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+<!-- Revision Item 3 -->
+<div class="bg-surface-container-lowest border-l-4 border-l-error border border-outline-variant p-stack-md rounded-r-xl shadow-sm hover:translate-x-1 transition-transform cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<span class="font-bold text-on-surface">Es Teh Solo</span>
+<span class="text-[10px] text-on-surface-variant">Yesterday</span>
+</div>
+<p class="text-xs text-on-surface-variant line-clamp-2 italic mb-3">"Client requested a different font for the menu board section. Use the corporate branding guide v2..."</p>
+<div class="flex items-center gap-2">
+<span class="bg-error-container/20 text-error px-2 py-1 rounded text-[10px] font-bold">BRANDING SYNC</span>
+<span class="ml-auto material-symbols-outlined text-on-surface-variant hover:text-primary" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</div>
+<button class="w-full py-3 text-secondary text-xs font-bold hover:underline">LIHAT SEMUA REVISI</button>
+</div>
+</div>
+<!-- Detailed Project Progress Table -->
+<section class="mt-gutter">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<div class="p-4 border-b border-outline-variant flex items-center justify-between">
+<h3 class="font-headline-md text-headline-md text-on-surface">Pipa Produksi Tim Desain</h3>
+<div class="flex gap-2">
+<span class="bg-surface-container-high px-3 py-1 rounded-full text-xs font-medium">Batch: Oct-2023</span>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container text-on-surface-variant font-label-md text-[11px] uppercase tracking-wider">
+<th class="px-6 py-4">NAMA UMKM</th>
+<th class="px-6 py-4">FASE SAAT INI</th>
+<th class="px-6 py-4">DITUGASKAN KE</th>
+<th class="px-6 py-4">UPDATE TERAKHIR</th>
+<th class="px-6 py-4">STATUS</th>
+<th class="px-6 py-4 text-right">AKSI</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="font-bold text-primary">Soto Bang Jago</div>
+<div class="text-[10px] text-on-surface-variant">ID: UMKM-9281</div>
+</td>
+<td class="px-6 py-4 text-xs">Mockup Finalization</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-secondary-container text-[10px] flex items-center justify-center font-bold">RD</div>
+<span class="text-xs">Rendy D.</span>
+</div>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">10 mins ago</td>
+<td class="px-6 py-4">
+<span class="bg-secondary-container/30 text-secondary px-2 py-1 rounded text-[10px] font-bold border border-secondary/20">IN PROGRESS</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:text-primary-container p-1"><span class="material-symbols-outlined" data-icon="visibility">visibility</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="font-bold text-primary">Kopi Kenangan UMKM</div>
+<div class="text-[10px] text-on-surface-variant">ID: UMKM-7721</div>
+</td>
+<td class="px-6 py-4 text-xs">Internal QC Review</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-tertiary-container text-[10px] flex items-center justify-center font-bold">SA</div>
+<span class="text-xs">Siti A.</span>
+</div>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">2 hours ago</td>
+<td class="px-6 py-4">
+<span class="bg-tertiary-container/30 text-tertiary px-2 py-1 rounded text-[10px] font-bold border border-tertiary/20">QC PENDING</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:text-primary-container p-1"><span class="material-symbols-outlined" data-icon="visibility">visibility</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4">
+<div class="font-bold text-primary">Gorengan Renyah</div>
+<div class="text-[10px] text-on-surface-variant">ID: UMKM-5512</div>
+</td>
+<td class="px-6 py-4 text-xs">Waiting Production</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary-container/20 text-[10px] flex items-center justify-center font-bold">SY</div>
+<span class="text-xs">System</span>
+</div>
+</td>
+<td class="px-6 py-4 text-xs text-on-surface-variant">1 day ago</td>
+<td class="px-6 py-4">
+<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-[10px] font-bold border border-green-200 uppercase">Approved</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-primary hover:text-primary-container p-1"><span class="material-symbols-outlined" data-icon="visibility">visibility</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Nav for Mobile -->
+<nav class="fixed bottom-0 w-full z-50 md:hidden flex justify-around items-center h-16 px-container-padding-mobile bg-surface border-t border-outline-variant shadow-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-md text-[10px]">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-5 py-1" href="#">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+<span class="font-label-md text-[10px]">Surveys</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="photo_camera">photo_camera</span>
+<span class="font-label-md text-[10px]">Camera</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-md text-[10px]">Profile</span>
+</a>
+</nav>
+<!-- Micro-interactions Script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const uploadDropzone = document.querySelector('.border-dashed');
+            if (uploadDropzone) {
+                uploadDropzone.addEventListener('mouseenter', () => {
+                    uploadDropzone.classList.add('border-primary', 'bg-surface-container');
+                });
+                uploadDropzone.addEventListener('mouseleave', () => {
+                    uploadDropzone.classList.remove('border-primary', 'bg-surface-container');
+                });
+            }
+
+            // Simple notification toast simulator
+            const stats = document.querySelectorAll('.bg-surface-container-lowest.p-stack-md');
+            stats.forEach(card => {
+                card.addEventListener('click', () => {
+                    card.classList.add('scale-95');
+                    setTimeout(() => card.classList.remove('scale-95'), 100);
+                });
+            });
+        });
+    </script>
+</body></html>

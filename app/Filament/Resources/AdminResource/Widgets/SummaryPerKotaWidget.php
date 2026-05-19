@@ -16,72 +16,78 @@ class SummaryPerKotaWidget extends BaseWidget {
     protected int | string | array $columnSpan = 'full';
 
     public function table( Table $table ): Table {
+        $user = auth()->user();
+
         return $table
         ->query(
             Umkm::query()
-            ->with( 'kota' ) // Sesuaikan nama relasi kota jika berbeda
+            ->with( 'kota' ) 
+            // ====================================================================
+            // TAMBAHAN FILTER PRIVASI KOTA: Kunci data jika bukan Admin/Client global
+            // ====================================================================
+            ->when(in_array($user?->role, ['design', 'pic_lapangan']) && $user?->kota_id, function ($query) use ($user) {
+                $query->where('kota_id', $user->kota_id);
+            })
             ->latest()
             ->limit( 10 ) 
         )
 
-        // tombol lihat semua + Injeksi CSS Murni untuk modifikasi tampilan Table Header
-      // tombol lihat semua + Injeksi CSS Murni untuk modifikasi tampilan Table Header
-->headerActions( [
-    // 1. INJEKSI CSS MURNI (Disembunyikan secara visual, hanya memuat style)
-    Tables\Actions\Action::make('custom_css_injector')
-        ->label('')
-        ->disabled()
-        ->extraAttributes([
-            'style' => 'display: none !important; padding: 0 !important; margin: 0 !important;'
-        ])
-        ->icon(fn () => new HtmlString('
-            <style>
-                /* Mewarnai Latar Belakang & Teks Header Tabel */
-                .fi-ta-table thead, 
-                .fi-ta-table thead tr {
-                    background-color: #ea580c !important; /* Warna Oranye Filament */
-                }
-                
-                /* Memaksa text th menjadi putih bersih, tebal, dan kontras */
-                .fi-ta-table thead th span,
-                .fi-ta-table thead th {
-                    color: #ffffff !important;
-                    font-weight: 700 !important;
-                    letter-spacing: 0.05em !important;
-                }
+        ->headerActions( [
+            // 1. INJEKSI CSS MURNI (Disembunyikan secara visual, hanya memuat style)
+            Tables\Actions\Action::make('custom_css_injector')
+                ->label('')
+                ->disabled()
+                ->extraAttributes([
+                    'style' => 'display: none !important; padding: 0 !important; margin: 0 !important;'
+                ])
+                ->icon(fn () => new HtmlString('
+                    <style>
+                        /* Mewarnai Latar Belakang & Teks Header Tabel */
+                        .fi-ta-table thead, 
+                        .fi-ta-table thead tr {
+                            background-color: #ea580c !important; /* Warna Oranye Filament */
+                        }
+                        
+                        /* Memaksa text th menjadi putih bersih, tebal, dan kontras */
+                        .fi-ta-table thead th span,
+                        .fi-ta-table thead th {
+                            color: #ffffff !important;
+                            font-weight: 700 !important;
+                            letter-spacing: 0.05em !important;
+                        }
 
-                /* Kustomisasi Tombol "Lihat Semua" agar serasi dengan Oranye (Dark Charcoal Style) */
-                .btn-lihat-semua-custom {
-                    background-color: #1e293b !important; /* Slate / Dark Charcoal */
-                    color: #ffffff !important;
-                    border: 1px solid #334155 !important;
-                    border-radius: 8px !important;
-                    padding: 6px 14px !important;
-                    transition: all 0.2s ease-in-out !important;
-                }
+                        /* Kustomisasi Tombol "Lihat Semua" agar serasi dengan Oranye (Dark Charcoal Style) */
+                        .btn-lihat-semua-custom {
+                            background-color: #1e293b !important; /* Slate / Dark Charcoal */
+                            color: #ffffff !important;
+                            border: 1px solid #334155 !important;
+                            border-radius: 8px !important;
+                            padding: 6px 14px !important;
+                            transition: all 0.2s ease-in-out !important;
+                        }
 
-                .btn-lihat-semua-custom:hover {
-                    background-color: #334155 !important; /* Lebih terang saat di-hover */
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-                }
-                
-                /* Menghilangkan border default gray bawah thead */
-                .fi-ta-header-cell {
-                    border-bottom: none !important;
-                }
-            </style>
-        ')),
+                        .btn-lihat-semua-custom:hover {
+                            background-color: #334155 !important; /* Lebih terang saat di-hover */
+                            transform: translateY(-1px);
+                            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                        }
+                        
+                        /* Menghilangkan border default gray bawah thead */
+                        .fi-ta-header-cell {
+                            border-bottom: none !important;
+                        }
+                    </style>
+                ')),
 
-    // 2. TOMBOL UTAMA "LIHAT SEMUA"
-    Tables\Actions\Action::make( 'lihat_semua' )
-    ->label( 'Lihat Semua' )
-    ->url( route( 'filament.admin.resources.umkms.index' ) )
-    ->icon( 'heroicon-m-arrow-right' )
-    ->extraAttributes([
-        'class' => 'btn-lihat-semua-custom' // Menyambungkan ke CSS di atas
-    ]),
-] )
+            // 2. TOMBOL UTAMA "LIHAT SEMUA"
+            Tables\Actions\Action::make( 'lihat_semua' )
+            ->label( 'Lihat Semua' )
+            ->url( route( 'filament.admin.resources.umkms.index' ) )
+            ->icon( 'heroicon-m-arrow-right' )
+            ->extraAttributes([
+                'class' => 'btn-lihat-semua-custom' // Menyambungkan ke CSS di atas
+            ]),
+        ] )
 
         ->columns( [
             // USAHA / KOTA
@@ -118,30 +124,30 @@ class SummaryPerKotaWidget extends BaseWidget {
             ->modalHeading( fn ( $record ) => $record->nama_usaha )
             ->infolist( [
 
-            // 2. Menampilkan Alasan Reject dengan CSS Murni (Inline Styles)
-\Filament\Infolists\Components\TextEntry::make('alasan_reject')
-    ->label('Alasan Penolakan (Reject)')
-    ->placeholder('Tidak ada alasan tertulis.')
-    ->color('danger')
-    ->weight('bold')
-    ->icon('heroicon-m-exclamation-triangle')
-    ->iconColor('danger')
-    
-    // KUNCI UTAMA: Menggunakan CSS Murni / Inline Styles
-    ->extraAttributes([
-        'style' => '
-            margin-top: 8px;
-            padding: 16px;
-            background-color: rgba(239, 68, 68, 0.08); /* Warna merah transparan soft */
-            border-left: 4px solid #ef4444;            /* Garis vertikal merah tegas */
-            border-top-right-radius: 12px;
-            border-bottom-right-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-            white-space: normal;
-            word-break: break-word;
-        '
-    ])
-    ->visible(fn ($record) => $record?->status === 'rejected'),
+                // 2. Menampilkan Alasan Reject dengan CSS Murni (Inline Styles)
+                \Filament\Infolists\Components\TextEntry::make('alasan_reject')
+                    ->label('Alasan Penolakan (Reject)')
+                    ->placeholder('Tidak ada alasan tertulis.')
+                    ->color('danger')
+                    ->weight('bold')
+                    ->icon('heroicon-m-exclamation-triangle')
+                    ->iconColor('danger')
+                    
+                    // KUNCI UTAMA: Menggunakan CSS Murni / Inline Styles
+                    ->extraAttributes([
+                        'style' => '
+                            margin-top: 8px;
+                            padding: 16px;
+                            background-color: rgba(239, 68, 68, 0.08); /* Warna merah transparan soft */
+                            border-left: 4px solid #ef4444;            /* Garis vertikal merah tegas */
+                            border-top-right-radius: 12px;
+                            border-bottom-right-radius: 12px;
+                            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                            white-space: normal;
+                            word-break: break-word;
+                        '
+                    ])
+                    ->visible(fn ($record) => $record?->status === 'rejected'),
 
                 // =========================================================================
                 // INJEKSI LIGHTBOX POPUP COMPONENT (Stanby mendengarkan klik pada gambar)
@@ -204,13 +210,13 @@ class SummaryPerKotaWidget extends BaseWidget {
                 ->columns( 2 ),
 
                 // UKURAN PANEL
-\Filament\Infolists\Components\Section::make('Ukuran Panel')
-    ->schema([
-        // Gunakan ViewEntry kustom untuk merender tabel HTML murni
-        \Filament\Infolists\Components\ViewEntry::make('ukuran_panel_table')
-            ->view('filament.infolists.components.tabel-panel')
-            ->columnSpanFull(),
-    ]),
+                \Filament\Infolists\Components\Section::make('Ukuran Panel')
+                    ->schema([
+                        \Filament\Infolists\Components\ViewEntry::make('ukuran_panel_table')
+                            ->view('filament.infolists.components.tabel-panel')
+                            ->columnSpanFull(),
+                    ]),
+                
                 // FOTO
                 \Filament\Infolists\Components\Section::make( 'Foto' )
                 ->schema( [

@@ -25,7 +25,9 @@ class UmkmDesign extends Model
         'approved_at' => 'datetime',
     ];
     
-
+// =====================================================================
+// Relasi Eloquent
+// =====================================================================
     public function umkm(): BelongsTo
     {
         return $this->belongsTo(Umkm::class);

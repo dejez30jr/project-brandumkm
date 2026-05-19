@@ -2,99 +2,208 @@
 
 namespace App\Exports;
 
-use App\Models\Umkm;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Illuminate\Database\Eloquent\Builder;
 
-class UmkmExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
+class UmkmExport implements FromCollection, WithHeadings
 {
-    protected ?string $status;
-    protected ?int $kotaId;
+    protected $records;
 
-    public function __construct(?string $status = null, ?int $kotaId = null)
+    public function __construct($records)
     {
-        $this->status = $status;
-        $this->kotaId = $kotaId;
+        $this->records = $records;
     }
 
     public function collection()
     {
-        $query = Umkm::with(['kota', 'submittedBy']);
+        return collect($this->records)->map(function ($item) {
 
-        if ($this->status) {
-            $query->where('status', $this->status);
-        }
+            return [
 
-        if ($this->kotaId) {
-            $query->where('kota_id', $this->kotaId);
-        }
+                'Nama Usaha' => $item->nama_usaha,
+                'Nama Pemilik' => $item->nama_pemilik,
+                'Alamat Usaha' => $item->alamat_usaha,
+                'No WA' => $item->no_wa,
+                'Radius' => $item->radius,
 
-        // Filter berdasarkan role user
-        $user = auth()->user();
-        if ($user->isPicLapangan()) {
-            $query->where('submitted_by', $user->id);
-        } elseif ($user->isClient() && $user->kota_id) {
-            $query->where('kota_id', $user->kota_id);
-        }
+                'No Rekening' => $item->no_rekening,
+                'Nama Bank' => $item->nama_bank,
+                'Atas Nama Rekening' => $item->atas_nama_rekening,
 
-        return $query->get();
+                'Latitude' => $item->latitude,
+                'Longitude' => $item->longitude,
+                'Sharelock URL' => $item->sharelock_url,
+
+                'Depan Panel Atas (m2)' => $item->depan_panel_atas_m2,
+                'Depan Panel Tengah (m2)' => $item->depan_panel_tengah_m2,
+                'Depan Panel Bawah (m2)' => $item->depan_panel_bawah_m2,
+
+                'Kanan Panel Atas (m2)' => $item->kanan_panel_atas_m2,
+                'Kanan Panel Tengah (m2)' => $item->kanan_panel_tengah_m2,
+                'Kanan Panel Bawah (m2)' => $item->kanan_panel_bawah_m2,
+
+                'Kiri Panel Atas (m2)' => $item->kiri_panel_atas_m2,
+                'Kiri Panel Tengah (m2)' => $item->kiri_panel_tengah_m2,
+                'Kiri Panel Bawah (m2)' => $item->kiri_panel_bawah_m2,
+
+                'Total Area Branding' => $item->total_area_branding,
+
+                'Memenuhi Kriteria' => $item->memenuhi_kriteria ? 'Ya' : 'Tidak',
+
+                'Status' => $item->status,
+                'Alasan Reject' => $item->alasan_reject,
+
+                'Approved At' => $item->approved_at,
+                'Approved By' => $item->approved_by,
+
+                'Foto Depan' => $item->foto_depan,
+                'Foto Kanan' => $item->foto_kanan,
+                'Foto Kiri' => $item->foto_kiri,
+                'Foto Plang Alfamart' => $item->foto_plang_alfamart,
+
+                'Video Validasi' => $item->video_validasi,
+
+                'Kota' => $item->kota?->nama ?? '-',
+
+                'Submitted By' => $item->submittedBy?->name ?? '-',
+
+                'Created At' => optional($item->created_at)->format('d-m-Y H:i'),
+                'Updated At' => optional($item->updated_at)->format('d-m-Y H:i'),
+
+                'Depan Atas W' => $item->depan_atas_w,
+                'Depan Atas H' => $item->depan_atas_h,
+
+                'Depan Tengah W' => $item->depan_tengah_w,
+                'Depan Tengah H' => $item->depan_tengah_h,
+
+                'Depan Bawah W' => $item->depan_bawah_w,
+                'Depan Bawah H' => $item->depan_bawah_h,
+
+                'Kanan Atas W' => $item->kanan_atas_w,
+                'Kanan Atas H' => $item->kanan_atas_h,
+
+                'Kanan Tengah W' => $item->kanan_tengah_w,
+                'Kanan Tengah H' => $item->kanan_tengah_h,
+
+                'Kanan Bawah W' => $item->kanan_bawah_w,
+                'Kanan Bawah H' => $item->kanan_bawah_h,
+
+                'Kiri Atas W' => $item->kiri_atas_w,
+                'Kiri Atas H' => $item->kiri_atas_h,
+
+                'Kiri Tengah W' => $item->kiri_tengah_w,
+                'Kiri Tengah H' => $item->kiri_tengah_h,
+
+                'Kiri Bawah W' => $item->kiri_bawah_w,
+                'Kiri Bawah H' => $item->kiri_bawah_h,
+
+                'Design Final' => $item->design_final,
+
+                'Design Gerobak Depan' => $item->design_gerobak_depan,
+                'Design Gerobak Kiri' => $item->design_gerobak_kiri,
+                'Design Gerobak Kanan' => $item->design_gerobak_kanan,
+
+                'Stiker Tampak Depan' => $item->stiker_tampak_depan,
+                'Stiker Tampak Kanan' => $item->stiker_tampak_kanan,
+                'Stiker Tampak Kiri' => $item->stiker_tampak_kiri,
+
+                'Foto Wide' => $item->foto_wide,
+            ];
+        });
     }
 
     public function headings(): array
     {
         return [
-            'No',
+
             'Nama Usaha',
             'Nama Pemilik',
-            'Alamat',
-            'No. WhatsApp',
-            'Kota',
+            'Alamat Usaha',
+            'No WA',
             'Radius',
-            'Total Area (m2)',
-            'Memenuhi Kriteria',
-            'Status',
-            'PIC Lapangan',
-            'Tanggal Submit',
-            'No. Rekening',
+
+            'No Rekening',
             'Nama Bank',
-            'Atas Nama',
-        ];
-    }
+            'Atas Nama Rekening',
 
-    public function map($umkm): array
-    {
-        static $no = 0;
-        $no++;
+            'Latitude',
+            'Longitude',
+            'Sharelock URL',
 
-        return [
-            $no,
-            $umkm->nama_usaha,
-            $umkm->nama_pemilik,
-            $umkm->alamat_usaha,
-            $umkm->no_wa,
-            $umkm->kota?->nama ?? '-',
-            $umkm->radius ?? '-',
-            $umkm->total_area_branding ?? 0,
-            $umkm->memenuhi_kriteria ? 'Ya' : 'Tidak',
-            ucfirst($umkm->status),
-            $umkm->submittedBy?->name ?? '-',
-            $umkm->created_at->format('d/m/Y'),
-            $umkm->no_rekening ?? '-',
-            $umkm->nama_bank ?? '-',
-            $umkm->atas_nama_rekening ?? '-',
-        ];
-    }
+            'Depan Panel Atas (m2)',
+            'Depan Panel Tengah (m2)',
+            'Depan Panel Bawah (m2)',
 
-    public function styles(Worksheet $sheet): array
-    {
-        return [
-            // Header row bold
-            1 => ['font' => ['bold' => true]],
+            'Kanan Panel Atas (m2)',
+            'Kanan Panel Tengah (m2)',
+            'Kanan Panel Bawah (m2)',
+
+            'Kiri Panel Atas (m2)',
+            'Kiri Panel Tengah (m2)',
+            'Kiri Panel Bawah (m2)',
+
+            'Total Area Branding',
+
+            'Memenuhi Kriteria',
+
+            'Status',
+            'Alasan Reject',
+
+            'Approved At',
+            'Approved By',
+
+            'Foto Depan',
+            'Foto Kanan',
+            'Foto Kiri',
+            'Foto Plang Alfamart',
+
+            'Video Validasi',
+
+            'Kota',
+
+            'Submitted By',
+
+            'Created At',
+            'Updated At',
+
+            'Depan Atas W',
+            'Depan Atas H',
+
+            'Depan Tengah W',
+            'Depan Tengah H',
+
+            'Depan Bawah W',
+            'Depan Bawah H',
+
+            'Kanan Atas W',
+            'Kanan Atas H',
+
+            'Kanan Tengah W',
+            'Kanan Tengah H',
+
+            'Kanan Bawah W',
+            'Kanan Bawah H',
+
+            'Kiri Atas W',
+            'Kiri Atas H',
+
+            'Kiri Tengah W',
+            'Kiri Tengah H',
+
+            'Kiri Bawah W',
+            'Kiri Bawah H',
+
+            'Design Final',
+
+            'Design Gerobak Depan',
+            'Design Gerobak Kiri',
+            'Design Gerobak Kanan',
+
+            'Stiker Tampak Depan',
+            'Stiker Tampak Kanan',
+            'Stiker Tampak Kiri',
+
+            'Foto Wide',
         ];
     }
 }

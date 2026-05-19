@@ -31,6 +31,12 @@ class UmkmResource extends Resource
     protected static ?string $label = 'UMKM';
     protected static ?string $pluralLabel = 'Data UMKM';
 
+       // akses role design, client, admin
+    public static function canAccess(): bool
+    {
+        return in_array(auth()->user()?->role, ['design', 'pic_lapangan', 'client', 'admin']);
+    }
+
     // select data pic
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
 {
@@ -136,14 +142,14 @@ public static function canDelete($record): bool
                 // STEP 1
                 Forms\Components\Wizard\Step::make('Data Pemilik')
                     ->icon('heroicon-o-user')
-                    ->schema([
-                        Forms\Components\Hidden::make('submitted_by')
-                            ->default(auth()->id()),
+                   ->schema([
+            Forms\Components\Hidden::make('submitted_by')
+                ->default(auth()->id()),
 
-                        Forms\Components\TextInput::make('nama_pemilik')
-                            ->label('Nama Pemilik')
-                            ->placeholder('Nama Sesuai KTP')
-                            ->required(),
+            Forms\Components\TextInput::make('nama_pemilik')
+                ->label('Nama Pemilik')
+                ->placeholder('Nama Sesuai KTP')
+                ->required(),
 
                         Forms\Components\TextInput::make('nama_usaha')
                             ->label('Nama Usaha')
@@ -157,6 +163,7 @@ public static function canDelete($record): bool
                         Forms\Components\TextInput::make('no_wa')
                             ->label('No. WhatsApp')
                             ->tel()
+                             ->unique(table: Umkm::class, column: 'nama_pemilik', ignoreRecord: true)
                             ->required(),
 
                         Forms\Components\TextInput::make('radius')
@@ -191,12 +198,45 @@ public static function canDelete($record): bool
                     ->schema([
                         Forms\Components\TextInput::make('no_rekening')
                             ->label('No. Rekening')
+                            ->unique(table: Umkm::class, column: 'nama_pemilik', ignoreRecord: true)
                             ->required(),
 
-                        Forms\Components\TextInput::make('nama_bank')
-                            ->label('Nama Bank')
-                            ->required()
-                            ->placeholder('Bca,Bni,Mandiri...'),
+                        Forms\Components\Select::make('nama_bank') // Sesuaikan dengan nama kolom di database Anda
+    ->label('Pilih Bank')
+    ->placeholder('Pilih bank penyedia')
+    ->options([
+        'BCA' => 'BCA',
+        'Mandiri' => 'Mandiri',
+        'BNI' => 'BNI',
+        'BRI' => 'BRI',
+        'Danamon' => 'Danamon',
+        'Permata' => 'Permata',
+        'CIMB Niaga' => 'CIMB Niaga',
+        'Maybank' => 'Maybank',
+        'Panin Bank' => 'Panin Bank',
+        'Bank Syariah Indonesia (BSI)' => 'Bank Syariah Indonesia (BSI)',
+        'Bank Jago' => 'Bank Jago',
+        'bank jatim' => 'bank jatim',
+        'bank jateng' => 'bank jateng',
+        'Bank Mega' => 'Bank Mega',
+        'Bank Bukopin' => 'Bank Bukopin',
+        'Bank OCBC NISP' => 'Bank OCBC NISP',
+        'Bank BTN' => 'Bank BTN',
+        'Bank BTPN' => 'Bank BTPN',
+        'Bank DKI' => 'Bank DKI',
+        'Bank Sinarmas' => 'Bank Sinarmas',
+        'Bank Jabar' => 'Bank Jabar',
+        'Bank BRI Syariah' => 'Bank BRI Syariah',
+        'Bank Danamon Syariah' => 'Bank Danamon Syariah',
+        'Bank Permata Syariah' => 'Bank Permata Syariah',
+        'Bank Panin Syariah' => 'Bank Panin Syariah',
+        'Bank OCBC NISP Syariah' => 'Bank OCBC NISP Syariah',
+        'Bank Blue Bca' => 'Bank Blue Bca',
+        'Bank Bukopin Syariah' => 'Bank Bukopin Syariah',
+    ])
+    ->searchable() // Biar tim design/user bisa mengetik nama bank (tidak capek scroll)
+    ->preload()    // Memuat semua data di awal agar pencarian terasa instan dan cepat
+    ->required(),  // Opsional, jika wajib diisi
 
                         Forms\Components\TextInput::make('atas_nama_rekening')
                             ->label('Atas Nama')
@@ -960,7 +1000,7 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
     ])
     ->modalWidth('7xl'),
               Tables\Actions\EditAction::make()
-    ->visible(fn () => in_array(auth()->user()?->role, ['admin', 'pic_lapangan'])),
+    ->visible(fn () => in_array(auth()->user()?->role, ['pic_lapangan'])),
                 
                 Tables\Actions\Action::make('approve')
                     ->label('Approve')
@@ -1008,33 +1048,21 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                 ->visible(fn () => in_array(auth()->user()?->role, ['admin', 'pic_lapangan'])),
-                Action::make('exportExcel')
-                    ->label('Export Excel')
-                    ->icon('heroicon-o-document-arrow-down')
-                    ->color('success')
-                    ->form([
-                        Forms\Components\Select::make('status')
-                            ->label('Filter Status')
-                            ->options([
-                                '' => 'Semua Status',
-                                'pending' => 'Pending',
-                                'approved' => 'Approved',
-                                'rejected' => 'Rejected',
-                            ]),
-                        Forms\Components\Select::make('kota_id')
-                            ->label('Filter Kota')
-                            ->options(['' => 'Semua Kota'] + Kota::pluck('nama', 'id')->toArray()),
-                    ])
-                    ->action(function (array $data) {
-                        $status = $data['status'] ?: null;
-                        $kotaId = $data['kota_id'] ?: null;
 
-                        return Excel::download(
-                            new UmkmExport($status, $kotaId),
-                            'data-umkm-' . now()->format('Y-m-d') . '.xlsx'
-                        );
-                    }),
-                
+                 Action::make('exportExcel')
+        ->label('Export Excel')
+        ->icon('heroicon-o-document-arrow-down')
+        ->color('success')
+        ->action(function ($livewire) {
+
+            $query = $livewire->getFilteredTableQuery();
+
+            return \Maatwebsite\Excel\Facades\Excel::download(
+                new \App\Exports\UmkmExport($query->get()),
+                'umkm_terbranding_' . now()->format('Ymd_His') . '.xlsx'
+            );
+        }),
+
                 Action::make('exportPdf')
                     ->label('Export PDF')
                     ->icon('heroicon-o-document-text')

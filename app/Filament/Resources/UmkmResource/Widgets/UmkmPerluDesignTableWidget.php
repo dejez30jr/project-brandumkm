@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Filament\Resources\UmkmDesignResource;
 use App\Filament\Resources\UmkmResource;
+use App\Models\Kota;
 use App\Models\Umkm;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -43,6 +44,11 @@ class UmkmPerluDesignTableWidget extends BaseWidget
                     ->label('Nama UMKM')
                     ->searchable()
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('kota.nama')
+                    ->label('Kota')
+                    ->searchable()
+                    ->sortable(),
                 
                 Tables\Columns\TextColumn::make('nama_pemilik')
                     ->label('Pemilik')
@@ -58,6 +64,11 @@ class UmkmPerluDesignTableWidget extends BaseWidget
                     ->dateTime('d M Y H:i')
                     ->sortable(),
             ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('kota_id')
+                    ->label('Kota')
+                    ->options(Kota::pluck('nama', 'id')),
+            ])
             ->actions([
                 Tables\Actions\Action::make('proses_design')
                     ->label('Proses Design')
@@ -70,6 +81,6 @@ class UmkmPerluDesignTableWidget extends BaseWidget
     public static function canView(): bool
     {
         $userRole = auth()->user()?->role;
-        return in_array($userRole, ['design', 'admin']);
+        return in_array($userRole, ['design']);
     }
 }

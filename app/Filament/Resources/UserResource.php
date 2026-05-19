@@ -57,26 +57,12 @@ class UserResource extends Resource {
                     'client' => 'Client',
                     'design' => 'Team Design',
                     'pic_lapangan' => 'PIC Lapangan',
+                    'team_pasang' => 'Team Pasang',
                 ] )
                 ->required(),
-             Forms\Components\Select::make('kota')
-    ->label('Kota')
-    ->options([
-        'Bogor'     => 'Bogor',
-        'Depok'     => 'Depok',
-        'Tangerang' => 'Tangerang',
-        'Jakarta'   => 'Jakarta',
-        'Bekasi'    => 'Bekasi',
-        'Cirebon'   => 'Cirebon',
-        'Sukabumi'  => 'Sukabumi',
-        'Bandung'   => 'Bandung',
-        'Surabaya'  => 'Surabaya',
-        'Malang'    => 'Malang',
-        'Bali'      => 'Bali',
-        'Jogja'     => 'Jogja',
-        'Semarang'  => 'Semarang',
-        'Solo'      => 'Solo',
-    ])
+                Forms\Components\Select::make( 'kota_id' )
+                ->label( 'Kota' )
+                ->options( Kota::pluck( 'nama', 'id' ) )
     ->searchable()
     ->preload()
     ->native(false)

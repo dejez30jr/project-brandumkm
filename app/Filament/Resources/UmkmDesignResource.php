@@ -21,7 +21,32 @@ class UmkmDesignResource extends Resource
     protected static ?string $label = 'Design UMKM';
     protected static ?string $pluralLabel = 'Design UMKM';
 
+    // akses role design, client, admin
+    public static function canAccess(): bool
+    {
+        return in_array(auth()->user()?->role, ['design', 'pic_lapangan', 'client', 'admin']);
+    }
+
+    // ====================================================================
+    // DATA FILTER: Khusus Akun Design Hanya Bisa Melihat Data Sendiri
+    // ====================================================================
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+
+        // Jika user yang login memiliki role 'design', batasi datanya murni miliknya saja
+        if ($user?->role === 'design') {
+            $query->where('designer_id', $user->id);
+        }
+
+        // Jika role-nya Admin, PIC Lapangan, atau Client, mereka tetap bisa melihat seluruh data
+        return $query;
+    }
+
+    // ====================================================================
     // Badge notifikasi
+    // ====================================================================
 public static function getNavigationBadge(): ?string
 {
     $user = auth()->user(); 
@@ -38,21 +63,29 @@ public static function getNavigationBadge(): ?string
     return $count > 0 ? (string) $count : null;
 }
 
+// ====================================================================
+// Tooltip untuk badge notifikasi
+// ====================================================================
 public static function getNavigationBadgeColor(): ?string
 {
-    $user = auth()->user();
+    $user = auth()->user(); 
+    if (!$user) return null;
 
-    if ($user?->role === 'design') {
-        return UmkmDesign::where('status', 'revision_needed')->exists() ? 'danger' : null;
+    if ($user->role === 'design') {
+        // DIUBAH: Tambahkan ->where('designer_id', $user->id) agar angka badge sesuai history miliknya sendiri
+        $count = UmkmDesign::where('status', 'revision_needed')
+            ->where('designer_id', $user->id)
+            ->count();
+    } else {
+        $count = UmkmDesign::whereIn('status', ['pending', 'revised'])->count();
     }
 
-    $count = UmkmDesign::whereIn('status', ['pending', 'revised'])->count();
-
-    if ($count > 10) return 'danger';
-    if ($count > 5)  return 'warning';
-    return 'success';
+    return $count > 0 ? (string) $count : null;
 }
 
+// ====================================================================
+// Warna badge notifikasi
+// ====================================================================
     public static function getNavigationBadgeTooltip(): ?string
     {
         return 'Design menunggu review';
@@ -70,6 +103,7 @@ public static function getNavigationBadgeColor(): ?string
 
     public static function form(Form $form): Form
     {
+
         return $form
             ->schema([
                 Forms\Components\Section::make('Upload Design')

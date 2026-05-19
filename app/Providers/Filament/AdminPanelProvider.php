@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Resources\NotifikasiResource;
 use App\Filament\Widgets\DesignProgressChartWidget;
+use App\Filament\Widgets\UmkmTerbrandingTableWidget;
 use App\Filament\Widgets\SummaryPerKotaWidget;
 use App\Filament\Widgets\SummaryStatsWidget;
 use App\Filament\Widgets\UmkmChartWidget;
@@ -117,6 +118,7 @@ class AdminPanelProvider extends PanelProvider {
             UmkmPerluDesignTableWidget::class,
             UmkmChartWidget::class,
             SummaryPerKotaWidget::class,
+            UmkmTerbrandingTableWidget::class,
             // DesignProgressChartWidget::class,
         ] )
         ->bootUsing(function () {

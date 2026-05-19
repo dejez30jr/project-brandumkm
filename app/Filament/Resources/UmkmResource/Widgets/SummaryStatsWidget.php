@@ -2,10 +2,11 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Resources\UmkmDesignResource;
+use App\Filament\Resources\UmkmResource;
+use App\Filament\Resources\UmkmTerbrandingResource;
 use App\Models\Umkm;
 use App\Models\UmkmDesign;
-use App\Filament\Resources\UmkmResource;
-use App\Filament\Resources\UmkmDesignResource;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\HtmlString; // WAJIB ADA
@@ -27,7 +28,8 @@ class SummaryStatsWidget extends BaseWidget {
 
     protected function getStats(): array {
         $stats = [];
-        $userRole = auth()->user()?->role;
+        $user = auth()->user();
+        $userRole = $user?->role;
         
         // Base Style CSS Murni untuk efek timbul dan melayang
         $baseStyle = 'box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4); border-radius: 0.75rem; cursor: pointer; transition: transform 0.2s, filter 0.2s;';
@@ -38,7 +40,61 @@ class SummaryStatsWidget extends BaseWidget {
         ];
 
         // ====================================================================
-        // 1. AKSES: PIC LAPANGAN (Untuk Tambah Data)
+        // NEW CODE - 1. CARD: UMKM YANG PERLU DI BRANDING (Akses: team_pasang)
+        // ====================================================================
+        if ( in_array($userRole, ['team_pasang']) ) {
+            
+            $queryPerluBranding = Umkm::where(function ($q) {
+                // Kriteria: Salah satu atau semua foto stiker masih kosong (NULL)
+                $q->whereNull('stiker_tampak_depan')
+                  ->orWhereNull('stiker_tampak_kanan')
+                  ->orWhereNull('stiker_tampak_kiri')
+                  ->orWhereNull('foto_wide');
+            });
+
+            // Batasi hitungan data hanya untuk kota yang sama dengan team_pasang
+            // if ($user && !empty($user->kota_id)) {
+            //     $queryPerluBranding->where('kota_id', $user->kota_id);
+            // }
+
+            $stats[] = Stat::make( new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">UMKM Perlu di-Branding</span>'), $queryPerluBranding->count() )
+            ->description( new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Total antrean pasang stiker</span>') )
+            ->descriptionIcon( 'heroicon-m-clock' )
+            ->color( 'warning' )
+            ->url('/admin/pemasangan-stiker') // Mengarah ke slug resource pemasangan stiker
+            ->extraAttributes(array_merge($extraHtmlStyles, [
+                'style' => $baseStyle . ' background-color: #b45309;', // Amber/Coklat Gelap Solid
+                'onmouseover' => "this.style.transform='translateY(-4px)'; this.style.filter='brightness(1.15)';",
+                'onmouseout' => "this.style.transform='translateY(0)'; this.style.filter='brightness(1)';"
+            ]));
+        }
+
+        // ====================================================================
+        // NEW CODE - 2. CARD: TOTAL UMKM YANG SUDAH DI BRANDING (Akses: admin, design, client)
+        // ====================================================================
+        if ( in_array($userRole, ['admin', 'design', 'client', 'team_pasang']) ) {
+            
+            // Kriteria: Ke-4 foto dokumentasi stiker WAJIB sudah keisi semua (bukan NULL)
+            $totalSudahBranding = Umkm::whereNotNull('stiker_tampak_depan')
+                ->whereNotNull('stiker_tampak_kanan')
+                ->whereNotNull('stiker_tampak_kiri')
+                ->whereNotNull('foto_wide')
+                ->count();
+
+            $stats[] = Stat::make( new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Total UMKM Sudah di-Branding</span>'), $totalSudahBranding )
+            ->description( new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Gerobak selesai pasang stiker</span>') )
+            ->descriptionIcon( 'heroicon-m-check-circle' )
+            ->color( 'success' )
+            ->url( UmkmTerbrandingResource::getUrl( 'index' ) )
+            ->extraAttributes(array_merge($extraHtmlStyles, [
+                'style' => $baseStyle . ' background-color: #047857;', // Teal/Hijau Hutan Tua Solid
+                'onmouseover' => "this.style.transform='translateY(-4px)'; this.style.filter='brightness(1.15)';",
+                'onmouseout' => "this.style.transform='translateY(0)'; this.style.filter='brightness(1)';"
+            ]));
+        }
+
+        // ====================================================================
+        // 3. AKSES: PIC LAPANGAN (Untuk Tambah Data)
         // ====================================================================
         if ( in_array($userRole, ['pic_lapangan']) ) {
             $stats[] = Stat::make( new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Create Data UMKM</span>'), 'Tambah' )
@@ -84,7 +140,7 @@ class SummaryStatsWidget extends BaseWidget {
         }
 
         // ====================================================================
-        // 2. AKSES: KHUSUS DESIGN & ADMIN (Hanya yang berkaitan dengan DESIGN)
+        // 4. AKSES: KHUSUS DESIGN & ADMIN (Hanya yang berkaitan dengan DESIGN)
         // ====================================================================
         if ( in_array($userRole, ['design', 'admin']) ) {
             
@@ -159,7 +215,7 @@ class SummaryStatsWidget extends BaseWidget {
         }
 
         // ====================================================================
-        // 3. AKSES: ADMIN, PIC LAPANGAN, & CLIENT (Card Umum/Non-Design)
+        // 5. AKSES: ADMIN, PIC LAPANGAN, & CLIENT (Card Umum/Non-Design)
         // ====================================================================
         if ( in_array($userRole, ['admin', 'pic_lapangan', 'client']) ) {
             

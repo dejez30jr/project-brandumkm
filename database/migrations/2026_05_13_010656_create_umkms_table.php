@@ -78,7 +78,13 @@ return new class extends Migration
             // Relasi
             $table->foreignId('kota_id')->constrained('kotas')->onDelete('cascade');
             $table->foreignId('submitted_by')->constrained('users')->onDelete('cascade'); // PIC Lapangan
-            
+
+    // last final umkm terbranding 
+            $table->string('stiker_tampak_depan')->nullable();
+            $table->string('stiker_tampak_kanan')->nullable();
+            $table->string('stiker_tampak_kiri')->nullable();
+            $table->string('foto_wide')->nullable();
+        
             $table->timestamps();
         });
     }
