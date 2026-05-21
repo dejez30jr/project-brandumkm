@@ -303,7 +303,12 @@ class SummaryPerKotaWidget extends BaseWidget {
                         'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_gerobak_kanan) . '" })',
                     ])
                     ->visible(fn ($record) => !empty($record->design_gerobak_kanan)),
-                ])
+                ]),
+                // video validasi
+                   \Filament\Infolists\Components\ViewEntry::make('video_validasi')
+            ->label('Video Validasi')
+            ->view('filament.infolists.components.video-player')
+            ->visible(fn ($record) => !empty($record->video_validasi))
                 ->columns(3)
                    ->collapsible() 
                 ->visible(fn ($record) =>
