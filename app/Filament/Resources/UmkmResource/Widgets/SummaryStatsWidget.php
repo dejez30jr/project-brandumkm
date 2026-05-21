@@ -146,93 +146,84 @@ class SummaryStatsWidget extends BaseWidget {
             ]));
         }
 
-        // ====================================================================
-        // 4. AKSES: KHUSUS DESIGN & ADMIN (Hanya yang berkaitan dengan DESIGN)
-        // ====================================================================
-        if ( in_array($userRole, ['design']) ) {
-           // Gunakan query yang sama dengan di tabel agar angkanya sinkron
-    $queryAntrean = Umkm::query()
-        ->where('umkms.status', 'approved')
-        ->leftJoin('umkm_designs', 'umkm_designs.umkm_id', '=', 'umkms.id')
-        ->where(function ($q) use ($user, $userRole) {
-            $q->whereNull('umkm_designs.id'); // Data baru (belum disentuh)
-            
-            // Jika role-nya adalah 'design', hanya tampilkan revisi miliknya
-            if ($userRole === 'design') {
-                $q->orWhere(function ($sub) use ($user) {
-                    $sub->where('umkm_designs.status', 'revision_needed')
-                        ->where('umkm_designs.designer_id', $user->id);
-                });
-            } else {
-                // Jika Admin, tampilkan semua yang statusnya revision_needed
-                $q->orWhere('umkm_designs.status', 'revision_needed');
-            }
-        });
+      // ====================================================================
+// 4. AKSES: KHUSUS DESIGN & ADMIN (Hanya yang berkaitan dengan DESIGN)
+// ====================================================================
+if (in_array($userRole, ['design', 'admin'])) {
+    
+    // --- Query Antrean (Hanya untuk Role Design) ---
+    if ($userRole === 'design') {
+        $queryAntrean = Umkm::query()
+            ->where('umkms.status', 'approved')
+            ->leftJoin('umkm_designs', 'umkm_designs.umkm_id', '=', 'umkms.id')
+            ->where(function ($q) use ($user) {
+                $q->whereNull('umkm_designs.id')
+                  ->orWhere(function ($sub) use ($user) {
+                      $sub->where('umkm_designs.status', 'revision_needed')
+                          ->where('umkm_designs.designer_id', $user->id);
+                  });
+            });
 
-    $antreanDesignCount = $queryAntrean->count();
+        $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">UMKM Perlu di-Design</span>'), $queryAntrean->count())
+            ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Menunggu antrean design</span>'))
+            ->descriptionIcon('heroicon-m-paint-brush')
+            ->color('warning')
+            ->url('#tabel-antrean-design')
+            ->extraAttributes(array_merge($extraHtmlStyles, [
+                'style' => $baseStyle . ' background-color: #d97706;',
+                'onmouseover' => "this.style.transform='translateY(-4px)'; this.style.filter='brightness(1.15)';",
+                'onmouseout' => "this.style.transform='translateY(0)'; this.style.filter='brightness(1)';"
+            ]));
+    }
 
-    // UMKM Perlu di-Design (Oranye Pekat)
-    $stats[] = Stat::make( new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">UMKM Perlu di-Design</span>'), $antreanDesignCount )
-    ->description( new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">UMKM menunggu antrean design</span>') )
-    ->descriptionIcon( 'heroicon-m-paint-brush' )
-    ->color( 'warning' )
-    ->url('#tabel-antrean-design') 
-    ->extraAttributes(array_merge($extraHtmlStyles, [
-        'style' => $baseStyle . ' background-color: #d97706;', 
-        'onmouseover' => "this.style.transform='translateY(-4px)'; this.style.filter='brightness(1.15)';",
-        'onmouseout' => "this.style.transform='translateY(0)'; this.style.filter='brightness(1)';"
-    ]));
-            // Design Approved (Hijau Emerald Solid)
-           $stats[] = Stat::make( 
-        new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Design Approved</span>'), 
+    // --- Statistik Design (Admin & Design bisa melihat) ---
+    
+    // 1. Design Approved
+    $stats[] = Stat::make(
+        new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Design Approved</span>'),
         ($userRole === 'design' ? UmkmDesign::where('status', 'approved')->where('designer_id', $user->id) : UmkmDesign::where('status', 'approved'))->count()
     )
-    ->description( new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Design disetujui</span>') )
-    ->descriptionIcon( 'heroicon-m-paint-brush' )
-    ->color( 'success' )
-    ->url( UmkmDesignResource::getUrl( 'index', [
-        'tableFilters' => [ 'status' => [ 'value' => 'approved' ] ],
-    ]))
+    ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Design disetujui</span>'))
+    ->descriptionIcon('heroicon-m-paint-brush')
+    ->color('success')
+    ->url(UmkmDesignResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'approved']]]))
     ->extraAttributes(array_merge($extraHtmlStyles, [
-        'style' => $baseStyle . ' background-color: #059669;', 
+        'style' => $baseStyle . ' background-color: #059669;',
         'onmouseover' => "this.style.transform='translateY(-4px)'; this.style.filter='brightness(1.15)';",
         'onmouseout' => "this.style.transform='translateY(0)'; this.style.filter='brightness(1)';"
     ]));
-// Design Perlu Revisi (Merah Solid)
-    $stats[] = Stat::make( 
-        new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Design Perlu Revisi</span>'), 
+
+    // 2. Design Perlu Revisi
+    $stats[] = Stat::make(
+        new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Design Perlu Revisi</span>'),
         ($userRole === 'design' ? UmkmDesign::where('status', 'revision_needed')->where('designer_id', $user->id) : UmkmDesign::where('status', 'revision_needed'))->count()
     )
-    ->description( new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Perlu diperbaiki</span>') )
-    ->descriptionIcon( 'heroicon-m-exclamation-triangle' )
-    ->color( 'danger' )
-    ->url( UmkmDesignResource::getUrl( 'index', [
-        'tableFilters' => [ 'status' => [ 'value' => 'revision_needed' ] ],
-    ]))
+    ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Perlu diperbaiki</span>'))
+    ->descriptionIcon('heroicon-m-exclamation-triangle')
+    ->color('danger')
+    ->url(UmkmDesignResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'revision_needed']]]))
     ->extraAttributes(array_merge($extraHtmlStyles, [
         'style' => $baseStyle . ' background-color: #ef4444;',
         'onmouseover' => "this.style.transform='translateY(-4px)'; this.style.filter='brightness(1.15)';",
         'onmouseout' => "this.style.transform='translateY(0)'; this.style.filter='brightness(1)';"
     ]));
 
-    // Design Sudah Direvisi (Cyan/Teal Solid)
-    $stats[] = Stat::make( 
-        new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Design Sudah Direvisi</span>'), 
+    // 3. Design Sudah Direvisi
+    $stats[] = Stat::make(
+        new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Design Sudah Direvisi</span>'),
         ($userRole === 'design' ? UmkmDesign::where('status', 'revised')->where('designer_id', $user->id) : UmkmDesign::where('status', 'revised'))->count()
     )
-    ->description( new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Menunggu review ulang</span>') )
-    ->descriptionIcon( 'heroicon-m-arrow-path-rounded-square' )
-    ->color( 'info' )
-    ->url( UmkmDesignResource::getUrl( 'index', [
-        'tableFilters' => [ 'status' => [ 'value' => 'revised' ] ],
-    ]))
+    ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Menunggu review ulang</span>'))
+    ->descriptionIcon('heroicon-m-arrow-path-rounded-square')
+    ->color('info')
+    ->url(UmkmDesignResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'revised']]]))
     ->extraAttributes(array_merge($extraHtmlStyles, [
-        'style' => $baseStyle . ' background-color: #0891b2;', 
+        'style' => $baseStyle . ' background-color: #0891b2;',
         'onmouseover' => "this.style.transform='translateY(-4px)'; this.style.filter='brightness(1.15)';",
         'onmouseout' => "this.style.transform='translateY(0)'; this.style.filter='brightness(1)';"
     ]));
-        }
-        
+}
+       
         
         //====================================================================
 
