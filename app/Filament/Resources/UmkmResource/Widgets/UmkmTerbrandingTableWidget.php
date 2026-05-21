@@ -15,6 +15,15 @@ class UmkmTerbrandingTableWidget extends BaseWidget
     protected int | string | array $columnSpan = 'full';
 
     protected static ?int $sort = 5;
+    
+       public static function canView(): bool
+{
+    // Mengambil user yang sedang login
+    $user = auth()->user();
+
+    // Memastikan user ada dan role-nya adalah 'admin' atau 'client'
+    return $user && in_array($user->role, ['admin', 'client', 'team_pasang']);
+}
 
     public function table(Table $table): Table
     {

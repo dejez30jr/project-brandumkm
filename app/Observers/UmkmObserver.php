@@ -19,4 +19,5 @@ class UmkmObserver
             NotifikasiService::notifyUmkmApproved($umkm);
         }
     }
+    
 }

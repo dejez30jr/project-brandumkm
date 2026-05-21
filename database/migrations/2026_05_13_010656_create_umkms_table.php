@@ -29,27 +29,18 @@ return new class extends Migration
             $table->string('sharelock_url')->nullable();
             
             // Ukuran Gerobak - Tampak Depan
-            $table->string('depan_panel_atas')->nullable(); // format: "100x50"
             $table->decimal('depan_panel_atas_m2', 8, 2)->nullable();
-            $table->string('depan_panel_tengah')->nullable();
             $table->decimal('depan_panel_tengah_m2', 8, 2)->nullable();
-            $table->string('depan_panel_bawah')->nullable();
             $table->decimal('depan_panel_bawah_m2', 8, 2)->nullable();
             
             // Ukuran Gerobak - Sisi Kanan
-            $table->string('kanan_panel_atas')->nullable();
             $table->decimal('kanan_panel_atas_m2', 8, 2)->nullable();
-            $table->string('kanan_panel_tengah')->nullable();
             $table->decimal('kanan_panel_tengah_m2', 8, 2)->nullable();
-            $table->string('kanan_panel_bawah')->nullable();
             $table->decimal('kanan_panel_bawah_m2', 8, 2)->nullable();
             
             // Ukuran Gerobak - Sisi Kiri
-            $table->string('kiri_panel_atas')->nullable();
             $table->decimal('kiri_panel_atas_m2', 8, 2)->nullable();
-            $table->string('kiri_panel_tengah')->nullable();
             $table->decimal('kiri_panel_tengah_m2', 8, 2)->nullable();
-            $table->string('kiri_panel_bawah')->nullable();
             $table->decimal('kiri_panel_bawah_m2', 8, 2)->nullable();
             
             // Total Area

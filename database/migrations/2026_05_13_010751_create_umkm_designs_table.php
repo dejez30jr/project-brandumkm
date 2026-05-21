@@ -15,9 +15,9 @@ return new class extends Migration
             $table->foreignId('umkm_id')->constrained('umkms')->onDelete('cascade');
             $table->foreignId('designer_id')->constrained('users')->onDelete('cascade');
             $table->string('file_path');
-            $table->string('gerobak_depan')->nullable()->after('file_path');
-            $table->string('gerobak_kiri')->nullable()->after('gerobak_depan');
-            $table->string('gerobak_kanan')->nullable()->after('gerobak_kiri');
+            $table->string('gerobak_depan')->nullable();
+            $table->string('gerobak_kiri')->nullable();
+            $table->string('gerobak_kanan')->nullable();
             $table->enum('status', ['pending', 'approved', 'revision_needed', 'revised'])->default('pending');
             $table->text('catatan_revisi')->nullable();
             $table->integer('versi')->default(1);

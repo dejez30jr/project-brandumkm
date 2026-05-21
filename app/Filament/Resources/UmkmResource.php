@@ -31,7 +31,7 @@ class UmkmResource extends Resource
     protected static ?string $label = 'UMKM';
     protected static ?string $pluralLabel = 'Data UMKM';
 
-       // akses role design, client, admin
+    // akses role design, client, admin
     public static function canAccess(): bool
     {
         return in_array(auth()->user()?->role, ['design', 'pic_lapangan', 'client', 'admin']);
@@ -73,31 +73,31 @@ class UmkmResource extends Resource
     }
     
 
-    //  tombol create
+//  tombol create disni yang bisa akses hanya oleh pic_lapangan
   public static function canCreate(): bool
 {
     $user = auth()->user();
     return $user && in_array($user->role, ['pic_lapangan']);
 }
-// tombol edit
+// tombol edit hanya untuk pic_lapangan 
 public static function canEdit($record): bool
 {
     $user = auth()->user();
     return in_array($user->role, ['pic_lapangan']);
 }
 
-// tombol delete
+// tombol delete  hanya untuk pic_lapangan dan admin
 public static function canDelete($record): bool
 {
     $user = auth()->user();
     return in_array($user->role, ['admin', 'pic_lapangan']);
 }
 
+ // Jika user login adalah client, filter data sesuai user_id
     public static function getTableQuery(): \Illuminate\Database\Eloquent\Builder
 {
     $query = parent::getTableQuery();
 
-    // Jika user login adalah client, filter data sesuai user_id
     if (auth()->user()->isClient()) {
         $query->where('client_id', auth()->id());
     }
@@ -722,12 +722,12 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
         Forms\Components\Section::make('VIDEO VALIDASI JIKA ALFAMART TIDAK TERLIHAT ATAU TERHALANAG (OPSIONAL)')
             ->schema([
                 Forms\Components\FileUpload::make('video_validasi')
-                    ->label('UPLOAD VIDEO (MP4)')
+                  ->label('UPLOAD VIDEO (MP4) max 15MB')
+                     ->maxSize(15360) // 15MB dalam KB
                     ->disk('public')
                     ->directory('umkm-videos')
                     ->visibility('public')
                     ->acceptedFileTypes(['video/mp4', 'video/quicktime', 'video/x-msvideo'])
-                    ->maxSize(102400) // 100MB max
                     ->placeholder('Klik untuk upload video'),
             ])
             ->collapsible(),

@@ -36,7 +36,7 @@ class NotifikasiResource extends Resource
         if (!$user) return null;
         
         // ====================================================================
-        // PERBAIKAN BADGE: Filter badge sesuai role agar jumlah titik merah sinkron
+        // Filter badge sesuai role agar jumlah titik merah sinkron
         // ====================================================================
         $query = Notifikasi::whereDoesntHave('users', function ($query) use ($user) {
             $query->where('user_id', $user->id);
@@ -48,8 +48,9 @@ class NotifikasiResource extends Resource
             $query->whereIn('judul', ['UMKM Baru Masuk','Design Baru Upload', 'Desain Telah Direvisi 🎨']);
         } elseif ($user->role === 'pic_lapangan') {
             $query->whereIn('judul', ['Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
+        } elseif ($user->role === 'team_pasang') { // TAMBAHKAN INI
+            $query->whereIn('judul', ['UMKM Perlu Branding']);
         }
-
         $unreadCount = $query->count();
 
         return $unreadCount > 0 ? '●' : null;
@@ -67,27 +68,29 @@ class NotifikasiResource extends Resource
         return $form->schema([]);
     }
 
-    public static function table(Table $table): Table
+public static function table(Table $table): Table
     {
         $user = auth()->user();
         $userRole = $user?->role;
 
+        // Logika sync notifikasi yang belum dibaca (sudah benar, tetap dipertahankan)
         if ($user) {
-            // Kita kumpulkan notifikasi yang belum dibaca sesuai role dulu agar sinkron saat dibaca otomatis
             $unreadQuery = Notifikasi::whereDoesntHave('users', function ($query) use ($user) {
                 $query->where('user_id', $user->id);
             });
 
+            // Filter query sesuai role agar sinkron
             if ($userRole === 'design') {
                 $unreadQuery->whereIn('judul', ['UMKM Perlu Design', 'Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
             } elseif ($userRole === 'client') {
                 $unreadQuery->whereIn('judul', ['UMKM Baru Masuk','Design Baru Upload', 'Desain Telah Direvisi 🎨']);
             } elseif ($userRole === 'pic_lapangan') {
                 $unreadQuery->whereIn('judul', ['Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
+            } elseif ($userRole === 'team_pasang') {
+                $unreadQuery->whereIn('judul', ['UMKM Perlu Branding']);
             }
 
             $unreadNotifications = $unreadQuery->get();
-
             foreach ($unreadNotifications as $notif) {
                 if (method_exists($notif, 'users')) {
                     $notif->users()->syncWithoutDetaching([$user->id]);
@@ -95,35 +98,23 @@ class NotifikasiResource extends Resource
             }
         }
 
-        // 1. Ambil ID terakhir yang sudah dilihat user dari session
         $lastSeenId = Session::get('notifikasi_last_seen_id', 0);
-
-        // 2. Ambil ID terbaru yang ada di database saat ini
-        $latestRecord = $table->getQuery()->max('id'); 
-
-        // 3. Simpan ID terbaru ke session untuk request/refresh berikutnya
+        $latestRecord = Notifikasi::max('id'); 
         if ($latestRecord) {
             Session::put('notifikasi_last_seen_id', $latestRecord);
         }
 
         return $table
-            // ====================================================================
-            // LOGIKA FILTER ROLE: Membatasi data tabel berdasarkan role user
-            // ====================================================================
             ->modifyQueryUsing(function (Builder $query) use ($userRole) {
                 if ($userRole === 'design') {
-                    // Desainer hanya melihat antrean design baru dan permintaan revisi
                     $query->whereIn('judul', ['UMKM Perlu Design', 'Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
-                } 
-                elseif ($userRole === 'client') {
-                    // Client hanya melihat hasil upload design baru atau design pasca-revisi
+                } elseif ($userRole === 'client') {
                     $query->whereIn('judul', ['UMKM Baru Masuk','Design Baru Upload', 'Desain Telah Direvisi 🎨']);
-                } 
-                elseif ($userRole === 'pic_lapangan') {
-                    // PIC melihat umkm baru masuk dan tahu jika ada design yang butuh revisi di lapangan
+                } elseif ($userRole === 'pic_lapangan') {
                     $query->whereIn('judul', ['UMKM Baru Masuk']);
+                } elseif ($userRole === 'team_pasang') {
+                    $query->where('judul', 'UMKM Perlu Branding');
                 }
-                // Jika role-nya 'admin', kita biarkan (tidak masuk if manapun) sehingga memunculkan semua data.
             })
             ->columns([
                 Tables\Columns\TextColumn::make('judul')
@@ -131,56 +122,37 @@ class NotifikasiResource extends Resource
                     ->icon(function ($record) use ($lastSeenId) {
                         $isToday = Carbon::parse($record->created_at)->isToday();
                         $isNewData = $record->id > $lastSeenId;
-
                         return ($isToday && $isNewData) ? 'heroicon-m-sparkles' : null;
                     })
                     ->iconColor('success'),
-
                 Tables\Columns\TextColumn::make('pesan'),
-                
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->recordUrl(function (Notifikasi $record) {
+                // 1. Penanganan khusus untuk 'UMKM Perlu Design'
                 if ($record->judul === 'UMKM Perlu Design') {
-                    if (isset($record->umkm_id) && $record->umkm_id) {
+                    if ($record->umkm_id) {
                         return UmkmDesignResource::getUrl('create', ['umkm' => $record->umkm_id]);
                     }
-
-                    $umkm = \App\Models\Umkm::all()->first(function ($item) use ($record) {
-                        return str_contains(strtolower($record->pesan), strtolower($item->nama_usaha)); 
-                    });
-
-                    if ($umkm) {
-                        return UmkmDesignResource::getUrl('create', ['umkm' => $umkm->id]);
-                    }
-
-                    return UmkmDesignResource::getUrl('create');
+                    $umkm = \App\Models\Umkm::all()->first(fn($item) => str_contains(strtolower($record->pesan), strtolower($item->nama_usaha)));
+                    return $umkm ? UmkmDesignResource::getUrl('create', ['umkm' => $umkm->id]) : UmkmDesignResource::getUrl('create');
                 }
 
-                return match ($record->judul) {
-                    'UMKM Baru Masuk' => UmkmResource::getUrl('index', [
-                        'tableFilters' => [
-                            'status' => ['value' => 'pending'],
-                        ],
-                    ]),
-                    'Design Baru Upload' => UmkmDesignResource::getUrl('index', [
-                        'tableFilters' => [
-                            'status' => ['value' => 'pending'],
-                        ],
-                    ]),
-                    'Desain Telah Direvisi 🎨' => UmkmDesignResource::getUrl('index', [
-                        'tableFilters' => [
-                            'status' => ['value' => 'revised'],
-                        ],
-                    ]),
-                    'Design Perlu Revisi', 'Design Perlu Revisi ⚠️' => UmkmDesignResource::getUrl('index', [
-                        'tableFilters' => [
-                            'status' => [ 'value' => 'revision_needed' ],
-                        ],
-                    ]),
+                // 2. array untuk mengelompokkan judul yang memiliki tujuan URL sama
+                $judul = $record->judul;
+                
+                return match (true) {
+                    $judul === 'UMKM Baru Masuk' => UmkmResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'pending']]]),
+                    
+                    $judul === 'Design Baru Upload' => UmkmDesignResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'pending']]]),
+                    
+                    $judul === 'Desain Telah Direvisi 🎨' => UmkmDesignResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'revised']]]),
+                    
+                    $judul === 'Design Perlu Revisi' || $judul === 'Design Perlu Revisi ⚠️' => UmkmDesignResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'revision_needed']]]),
+                    
+                    $judul === 'UMKM Perlu Branding' => UmkmResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'ready_to_brand']]]),
+                    
                     default => null,
                 };
             });

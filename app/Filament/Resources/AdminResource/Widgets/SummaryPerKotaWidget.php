@@ -15,19 +15,28 @@ class SummaryPerKotaWidget extends BaseWidget {
 
     protected int | string | array $columnSpan = 'full';
 
+   public static function canView(): bool
+{
+    // Mengambil user yang sedang login
+    $user = auth()->user();
+
+    // Memastikan user ada dan role-nya adalah 'admin' atau 'client'
+    return $user && in_array($user->role, ['admin', 'client']);
+}
+
     public function table( Table $table ): Table {
         $user = auth()->user();
 
         return $table
         ->query(
-            Umkm::query()
+            Umkm::query()   
             ->with( 'kota' ) 
             // ====================================================================
             // TAMBAHAN FILTER PRIVASI KOTA: Kunci data jika bukan Admin/Client global
             // ====================================================================
-            ->when(in_array($user?->role, ['design', 'pic_lapangan']) && $user?->kota_id, function ($query) use ($user) {
-                $query->where('kota_id', $user->kota_id);
-            })
+            // ->when(in_array($user?->role, ['design', 'pic_lapangan']) && $user?->kota_id, function ($query) use ($user) {
+            //     $query->where('kota_id', $user->kota_id);
+            // })
             ->latest()
             ->limit( 10 ) 
         )
@@ -296,19 +305,70 @@ class SummaryPerKotaWidget extends BaseWidget {
                     ->visible(fn ($record) => !empty($record->design_gerobak_kanan)),
                 ])
                 ->columns(3)
-                ->collapsible() 
+                   ->collapsible() 
                 ->visible(fn ($record) =>
                     !empty($record->design_final) ||
                     !empty($record->design_gerobak_depan) ||
                     !empty($record->design_gerobak_kiri) ||
                     !empty($record->design_gerobak_kanan)
                 ),
+                 //  Section "UMKM Terbranding" 
+            \Filament\Infolists\Components\Section::make('UMKM Terbranding')
+            // tambahin background dan icon biar lebih menonjol bahwa ini sudah selesai dibranding
+                ->description('UMKM yang sudah selesai proses branding dan pemasangan stiker.')
+                ->icon('heroicon-o-check-badge')
+                ->schema([
+                    \Filament\Infolists\Components\TextEntry::make('status_pasang')
+                        ->label('Status Branding')
+                        ->default('SELESAI BRANDING')
+                        ->badge()
+                        ->color('success'),
+                    \Filament\Infolists\Components\TextEntry::make('updated_at')
+                        ->label('Tanggal Selesai')
+                        ->dateTime('d M Y H:i'),
+                    \Filament\Infolists\Components\ImageEntry::make('stiker_tampak_depan')
+                        ->label('Stiker Tampak Depan')
+                        ->height(200)
+                        ->extraAttributes(fn ($record) => [
+                            'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                            'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->stiker_tampak_depan) . '" })',
+                        ]),
+                    \Filament\Infolists\Components\ImageEntry::make('stiker_tampak_kanan')
+                        ->label('Stiker Tampak Kanan')
+                        ->height(200)
+                        ->extraAttributes(fn ($record) => [
+                            'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                            'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->stiker_tampak_kanan) . '" })',
+                        ]),
+                    \Filament\Infolists\Components\ImageEntry::make('stiker_tampak_kiri')
+                        ->label('Stiker Tampak Kiri')   
+                        ->height(200)
+                        ->extraAttributes(fn ($record) => [
+                            'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                            'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->stiker_tampak_kiri) . '" })',
+                        ]),
+                    \Filament\Infolists\Components\ImageEntry::make('foto_wide')
+                        ->label('Foto Wide (Keseluruhan)')
+                        ->height(200)
+                        ->extraAttributes(fn ($record) => [
+                            'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg   overflow-hidden',
+                            'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_wide) . '" })',
+                        ]),
+                ])->columns(2)
+                ->collapsible() 
+                ->visible(fn ($record) =>
+                    !empty($record->stiker_tampak_depan) ||
+                    !empty($record->stiker_tampak_kanan) ||
+                    !empty($record->stiker_tampak_kiri) ||
+                    !empty($record->foto_wide)
+                ),
             ] ),
         ] )
 
         // supaya klik row buka popup
         ->recordAction( 'view' )
-        ->paginated( false )
-        ->striped();
+        ->paginated()
+        ->striped()
+        ->poll('5s');
     }
 }

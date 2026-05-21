@@ -24,7 +24,7 @@ class UmkmDesignResource extends Resource
     // akses role design, client, admin
     public static function canAccess(): bool
     {
-        return in_array(auth()->user()?->role, ['design', 'pic_lapangan', 'client', 'admin']);
+        return in_array(auth()->user()?->role, ['design', 'client', 'admin']);
     }
 
     // ====================================================================
@@ -161,8 +161,8 @@ Forms\Components\Select::make('kota_id')
                             ->searchable()
                             ->preload()
                             ->required()
-                            // ====================================================================
-    // TAMBAHAN VALIDASI: Mencegah Penginputan Ganda untuk UMKM yang Sama
+    // ====================================================================
+    //  VALIDASI: Mencegah Penginputan Ganda untuk UMKM yang Sama
     // ====================================================================
     ->unique(
         table: 'umkm_designs',     // Nama tabel database Anda
@@ -179,9 +179,7 @@ Forms\Components\Select::make('kota_id')
 
                         Forms\Components\FileUpload::make('file_path')
                             ->label('File Design final')
-                            ->directory('umkm-designs')
-                            ->image()
-                            ->required(),
+                            ->directory('umkm-designs')    ->required(),
 
                         Forms\Components\FileUpload::make('gerobak_depan')
                             ->label('File mockup Design Gerobak Depan')
@@ -292,24 +290,6 @@ Forms\Components\Select::make('kota_id')
 
                 Tables\Actions\DeleteAction::make()
                     ->visible(fn () => auth()->user()?->isDesign()),
-
-                // Tombol Download
-                // Tables\Actions\Action::make('download')
-                //     ->label('Download img')
-                //     ->icon('heroicon-o-arrow-down-tray')
-                //     ->color('info')
-                //     ->action(function (UmkmDesign $record) {
-                //         $filePath = storage_path('app/public/' . $record->file_path);
-
-                //         if (file_exists($filePath)) {
-                //             return response()->download($filePath);
-                //         }
-
-                //         \Filament\Notifications\Notification::make()
-                //             ->title('File tidak ditemukan')
-                //             ->danger()
-                //             ->send();
-                //     }),
 
                 // Approve Design
                 Tables\Actions\Action::make('approve')
@@ -440,14 +420,13 @@ Forms\Components\Select::make('kota_id')
             ]);
     }
 
-    // ... Batas awal method table() kamu ...
 
     public static function getPages(): array
     {
         return [
             'index'  => Pages\ListUmkmDesigns::route('/'),
             'create' => Pages\CreateUmkmDesign::route('/create'),
-            // 'edit' => Pages\EditUmkmDesign::route('/edit'),
+              'edit'   => Pages\EditUmkmDesign::route('/{record}/edit'),
         ];
     }
 }

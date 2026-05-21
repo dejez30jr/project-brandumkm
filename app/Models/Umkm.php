@@ -187,7 +187,11 @@ class Umkm extends Model
     }
 
 
-    // Relasi ke UmkmDesign dan AfterBranding   
+  public function umkmDesign(): HasOne
+{
+    // Mengambil desain terakhir yang terkait dengan UMKM ini
+    return $this->hasOne(UmkmDesign::class, 'umkm_id')->latestOfMany();
+}
    
     public function umkmStiker(): HasOne
     {

@@ -13,6 +13,15 @@ class UmkmChartWidget extends ChartWidget
     protected int | string | array $columnSpan = 'full';
     protected static ?string $maxHeight = '400px';
 
+   public static function canView(): bool
+{
+    // Mengambil user yang sedang login
+    $user = auth()->user();
+
+    // Memastikan user ada dan role-nya adalah 'admin' atau 'client'
+    return $user && in_array($user->role, ['admin', 'client']);
+}
+
     protected function getData(): array
     {
         // Ambil semua kota yang memiliki UMKM

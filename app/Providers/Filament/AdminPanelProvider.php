@@ -4,11 +4,11 @@ namespace App\Providers\Filament;
 
 use App\Filament\Resources\NotifikasiResource;
 use App\Filament\Widgets\DesignProgressChartWidget;
-use App\Filament\Widgets\UmkmTerbrandingTableWidget;
 use App\Filament\Widgets\SummaryPerKotaWidget;
 use App\Filament\Widgets\SummaryStatsWidget;
 use App\Filament\Widgets\UmkmChartWidget;
 use App\Filament\Widgets\UmkmPerluDesignTableWidget;
+use App\Filament\Widgets\UmkmTerbrandingTableWidget;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -20,6 +20,7 @@ use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentView;
 use Filament\Support\View\PanelsRenderHooks;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -51,6 +52,30 @@ class AdminPanelProvider extends PanelProvider {
         ->pages( [
             Pages\Dashboard::class,
         ] )
+      ->renderHook(
+            PanelsRenderHook::USER_MENU_BEFORE,
+            fn (): string => Blade::render('
+                <a href="/download/umkm-v1.apk" 
+                   download 
+                   style="margin-right: 15px; 
+                          background: linear-gradient(to right, #10b981, #059669); 
+                          color: white; 
+                          padding: 7px 15px; 
+                          border-radius: 20px; 
+                          font-weight: bold; 
+                          font-size: 13px; 
+                          text-decoration: none;
+                          display: flex; 
+                          align-items: center; 
+                          gap: 6px;
+                          box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <svg style="width:18px;height:18px;" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Download APK
+                </a>
+            '),
+        )
      ->renderHook(
     'panels::user-menu.before',
     function (): string {
