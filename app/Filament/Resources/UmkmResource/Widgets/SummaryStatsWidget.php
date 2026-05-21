@@ -295,14 +295,14 @@ if (in_array($userRole, ['admin', 'pic_lapangan', 'client'])) {
         ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #16a34a;']));
 
     // Pending (Khusus non-pic_lapangan agar tidak double dengan card di atas)
-    if ($userRole !== 'pic_lapangan') {
-        $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">UMKM Perlu Review</span>'), (clone $query)->where('status', 'pending')->count())
-            ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Menunggu review</span>'))
-            ->descriptionIcon('heroicon-m-clock')
-            ->color('warning')
-            ->url($getFilter('pending'))
-            ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #ea580c;']));
-    }
+    // if ($userRole !== 'pic_lapangan') {
+    //     $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">UMKM Perlu Review</span>'), (clone $query)->where('status', 'pending')->count())
+    //         ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Menunggu review</span>'))
+    //         ->descriptionIcon('heroicon-m-clock')
+    //         ->color('warning')
+    //         ->url($getFilter('pending'))
+    //         ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #ea580c;']));
+    // }
 
     // Ditolak
     $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">UMKM Ditolak</span>'), (clone $query)->where('status', 'rejected')->count())
