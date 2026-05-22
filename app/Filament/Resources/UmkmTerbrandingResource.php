@@ -104,7 +104,7 @@ class UmkmTerbrandingResource extends Resource
 
                  
                 Tables\Columns\TextColumn::make('status')
-                    ->label('STATUS')->badge()
+                    ->label('Status UMKM')->badge()
                     ->formatStateUsing(fn ($state) => strtoupper((string) $state))
                     ->colors([
                         'warning' => 'pending',
