@@ -736,7 +736,7 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
         Forms\Components\Section::make('VIDEO VALIDASI JIKA ALFAMART TIDAK TERLIHAT ATAU TERHALANAG (OPSIONAL)')
             ->schema([
                 Forms\Components\FileUpload::make('video_validasi')
-                  ->label('UPLOAD VIDEO (MP4) max 15MB')
+                  ->label('UPLOAD VIDEO (MP4) max 2 menit / 15MB — Wajib jika Alfamart tidak terlihat di foto')
                      ->maxSize(15360) // 15MB dalam KB
                     ->disk('public')
                     ->directory('umkm-videos')

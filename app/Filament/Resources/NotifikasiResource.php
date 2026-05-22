@@ -47,7 +47,8 @@ class NotifikasiResource extends Resource
         } elseif ($user->role === 'client') {
             $query->whereIn('judul', ['UMKM Baru Masuk','Design Baru Upload', 'Desain Telah Direvisi 🎨']);
         } elseif ($user->role === 'pic_lapangan') {
-            $query->whereIn('judul', ['Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
+            $query->whereIn('judul', ['Design Perlu Revisi', 'Design Perlu Revisi ⚠️', 'UMKM Anda Disetujui ✅', 'UMKM Anda Ditolak ❌'])
+                  ->where('user_id', $user->id);
         } elseif ($user->role === 'team_pasang') { // TAMBAHKAN INI
             $query->whereIn('judul', ['UMKM Perlu Branding']);
         }
@@ -85,7 +86,8 @@ public static function table(Table $table): Table
             } elseif ($userRole === 'client') {
                 $unreadQuery->whereIn('judul', ['UMKM Baru Masuk','Design Baru Upload', 'Desain Telah Direvisi 🎨']);
             } elseif ($userRole === 'pic_lapangan') {
-                $unreadQuery->whereIn('judul', ['Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
+                $unreadQuery->whereIn('judul', ['Design Perlu Revisi', 'Design Perlu Revisi ⚠️', 'UMKM Anda Disetujui ✅', 'UMKM Anda Ditolak ❌'])
+                            ->where('user_id', $user->id);
             } elseif ($userRole === 'team_pasang') {
                 $unreadQuery->whereIn('judul', ['UMKM Perlu Branding']);
             }
@@ -111,7 +113,8 @@ public static function table(Table $table): Table
                 } elseif ($userRole === 'client') {
                     $query->whereIn('judul', ['UMKM Baru Masuk','Design Baru Upload', 'Desain Telah Direvisi 🎨']);
                 } elseif ($userRole === 'pic_lapangan') {
-                    $query->whereIn('judul', ['Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
+                    $query->whereIn('judul', ['Design Perlu Revisi', 'Design Perlu Revisi ⚠️', 'UMKM Anda Disetujui ✅', 'UMKM Anda Ditolak ❌'])
+                          ->where('user_id', auth()->id());
                 } elseif ($userRole === 'team_pasang') {
                     $query->where('judul', 'UMKM Perlu Branding');
                 }

@@ -41,6 +41,29 @@ class NotifikasiService
                 'notifiable_id' => $umkm->id,
             ]);
         }
+
+        // Notify PIC bahwa UMKM-nya di-acc
+        Notifikasi::create([
+            'user_id' => $umkm->submitted_by,
+            'judul' => 'UMKM Anda Disetujui ✅',
+            'pesan' => "UMKM {$umkm->nama_usaha} telah disetujui oleh client.",
+            'tipe' => 'umkm_approved',
+            'notifiable_type' => Umkm::class,
+            'notifiable_id' => $umkm->id,
+        ]);
+    }
+
+    public static function notifyUmkmRejected(Umkm $umkm): void
+    {
+        // Notify PIC bahwa UMKM-nya di-reject
+        Notifikasi::create([
+            'user_id' => $umkm->submitted_by,
+            'judul' => 'UMKM Anda Ditolak ❌',
+            'pesan' => "UMKM {$umkm->nama_usaha} ditolak. Alasan: {$umkm->alasan_reject}",
+            'tipe' => 'umkm_rejected',
+            'notifiable_type' => Umkm::class,
+            'notifiable_id' => $umkm->id,
+        ]);
     }
 
     public static function notifyNewDesign(UmkmDesign $design): void

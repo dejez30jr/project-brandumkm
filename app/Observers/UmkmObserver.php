@@ -14,9 +14,12 @@ class UmkmObserver
 
     public function updated(Umkm $umkm): void
     {
-        // Langsung gunakan $umkm, tidak perlu ambil dari relasi
-        if ($umkm->isDirty('status') && $umkm->status === 'approved') {
-            NotifikasiService::notifyUmkmApproved($umkm);
+        if ($umkm->isDirty('status')) {
+            if ($umkm->status === 'approved') {
+                NotifikasiService::notifyUmkmApproved($umkm);
+            } elseif ($umkm->status === 'rejected') {
+                NotifikasiService::notifyUmkmRejected($umkm);
+            }
         }
     }
     
