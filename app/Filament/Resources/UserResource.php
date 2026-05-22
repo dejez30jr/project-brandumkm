@@ -60,19 +60,25 @@ class UserResource extends Resource {
                     'team_pasang' => 'Team Pasang',
                 ] )
                 ->required(),
-                Forms\Components\Select::make( 'kota_id' )
-                ->label( 'Kota' )
-                ->options( Kota::pluck( 'nama', 'id' ) )
+                Forms\Components\Select::make('kota_id')
+    ->label('Kota')
+    ->options(Kota::pluck('nama', 'id'))
     ->searchable()
     ->preload()
     ->native(false)
     ->createOptionForm([
-        Forms\Components\TextInput::make('name')
+        Forms\Components\TextInput::make('nama') 
             ->label('Kota Baru')
             ->required(),
     ])
     ->createOptionUsing(function (array $data) {
-        return $data['name'];
+        // Simpan ke database
+        $kota = Kota::create([
+            'nama' => $data['nama'], // Sesuaikan key dengan field di createOptionForm
+        ]);
+
+        // Kembalikan ID-nya agar Select otomatis terisi
+        return $kota->id;
     }),
                 Forms\Components\Toggle::make( 'is_active' )
                 ->label( 'Aktif' )
