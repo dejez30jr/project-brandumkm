@@ -365,8 +365,7 @@ class UmkmTerbrandingResource extends Resource
     ->modalWidth('7xl')
     // Section hanya muncul jika salah satu data tersedia
     ->visible(fn ($record) => !empty($record->status_pasang) || !empty($record->updated_at)),
-               Tables\Actions\EditAction::make()
-    ->visible(fn () => in_array(auth()->user()?->role, ['admin', 'pic_lapangan'])),
+               Tables\Actions\ViewAction::make()
             ])
 ->headerActions([
     Action::make('exportExcel')
