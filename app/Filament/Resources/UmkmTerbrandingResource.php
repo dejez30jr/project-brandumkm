@@ -102,6 +102,17 @@ class UmkmTerbrandingResource extends Resource
                     ->searchable()
                     ->weight('bold'),
 
+                 
+                Tables\Columns\TextColumn::make('status')
+                    ->label('STATUS')->badge()
+                    ->formatStateUsing(fn ($state) => strtoupper((string) $state))
+                    ->colors([
+                        'warning' => 'pending',
+                        'primary' => 'design_pending',
+                        'success' => 'approved',
+                        'danger'  => 'rejected',
+                    ]),
+
                 Tables\Columns\TextColumn::make('kota.nama')
                     ->label('Kota')
                     ->searchable(),
