@@ -163,7 +163,7 @@ public static function canDelete($record): bool
                         Forms\Components\TextInput::make('no_wa')
                             ->label('No. WhatsApp')
                             ->tel()
-                             ->unique(table: Umkm::class, column: 'nama_pemilik', ignoreRecord: true)
+                            ->unique(table: Umkm::class, column: 'no_wa', ignoreRecord: true)
                             ->required(),
 
                         Forms\Components\TextInput::make('radius')
