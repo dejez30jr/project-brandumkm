@@ -72,4 +72,21 @@ class NotifikasiService
             'notifiable_id' => $design->id,
         ]);
     }
+
+    public static function notifyDesignRevised(UmkmDesign $design): void
+    {
+        // Notify Admin & Client saat designer sudah selesai revisi
+        $users = User::whereIn('role', ['admin', 'client'])->get();
+
+        foreach ($users as $user) {
+            Notifikasi::create([
+                'user_id' => $user->id,
+                'judul' => 'Desain Telah Direvisi 🎨',
+                'pesan' => "Tim Desain telah memperbaiki desain untuk {$design->umkm->nama_usaha}. Silakan cek kembali untuk di-review.",
+                'tipe' => 'revised',
+                'notifiable_type' => UmkmDesign::class,
+                'notifiable_id' => $design->id,
+            ]);
+        }
+    }
 }

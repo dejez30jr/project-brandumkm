@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Widgets;
+namespace App\Filament\Resources\UmkmResource\Widgets;
 
 use App\Filament\Resources\UmkmDesignResource;
 use App\Filament\Resources\UmkmResource;

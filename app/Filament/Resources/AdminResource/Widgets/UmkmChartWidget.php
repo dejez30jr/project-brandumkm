@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Widgets;
+namespace App\Filament\Resources\AdminResource\Widgets;
 
 use App\Models\Kota;
 use App\Models\Umkm;

@@ -115,14 +115,28 @@ class BackupPage extends Page implements HasForms
             
             // LOGIKA KONDISIONAL MYSQLDUMP
             if ($backupType === 'city' && $kotaId) {
-                // Trik: mem-backup tabel UMKM & Desain yang hanya berelasi dengan kota_id terpilih
-                // Silakan sesuaikan nama tabel dan foreign key milik aplikasi Anda di bawah ini
-                $command = "mysqldump --user={$dbUser} --password={$dbPass} --host={$dbHost} {$dbName} " .
-                           "--where=\"kota_id={$kotaId}\" umkms " . // Asumsi nama tabel: umkms
-                           "> {$sqlDumpPath}";
+                // Validasi kotaId harus integer untuk mencegah injection
+                $kotaIdSafe = (int) $kotaId;
+                $command = sprintf(
+                    'mysqldump %s %s %s %s --where=%s %s > %s',
+                    escapeshellarg('--user=' . $dbUser),
+                    escapeshellarg('--password=' . $dbPass),
+                    escapeshellarg('--host=' . $dbHost),
+                    escapeshellarg($dbName),
+                    escapeshellarg("kota_id={$kotaIdSafe}"),
+                    escapeshellarg('umkms'),
+                    escapeshellarg($sqlDumpPath)
+                );
             } else {
                 // Perintah standar full backup
-                $command = "mysqldump --user={$dbUser} --password={$dbPass} --host={$dbHost} {$dbName} > {$sqlDumpPath}";
+                $command = sprintf(
+                    'mysqldump %s %s %s %s > %s',
+                    escapeshellarg('--user=' . $dbUser),
+                    escapeshellarg('--password=' . $dbPass),
+                    escapeshellarg('--host=' . $dbHost),
+                    escapeshellarg($dbName),
+                    escapeshellarg($sqlDumpPath)
+                );
             }
             
             exec($command);

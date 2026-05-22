@@ -72,7 +72,7 @@ class UserResource extends Resource {
             ->required(),
     ])
     ->createOptionUsing(function (array $data) {
-        return $data['name'];
+        return Kota::create(['nama' => $data['name']])->id;
     }),
                 Forms\Components\Toggle::make( 'is_active' )
                 ->label( 'Aktif' )

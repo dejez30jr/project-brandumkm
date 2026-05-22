@@ -52,11 +52,12 @@ public static function getNavigationBadge(): ?string
     $user = auth()->user(); 
 
     if ($user?->role === 'design') {
-        // Designer: yang perlu dia kerjakan = pending tidak relevan untuknya,
-        // yang relevan adalah revision_needed (harus diperbaiki)
-        $count = UmkmDesign::where('status', 'revision_needed')->count();
+        // Designer: hanya hitung revision_needed miliknya sendiri
+        $count = UmkmDesign::where('status', 'revision_needed')
+            ->where('designer_id', $user->id)
+            ->count();
     } else {
-        // Reviewer (client/pic_lapangan): yang harus di-review
+        // Reviewer (client/admin): yang harus di-review
         $count = UmkmDesign::whereIn('status', ['pending', 'revised'])->count();
     }
 
@@ -72,15 +73,17 @@ public static function getNavigationBadgeColor(): ?string
     if (!$user) return null;
 
     if ($user->role === 'design') {
-        // DIUBAH: Tambahkan ->where('designer_id', $user->id) agar angka badge sesuai history miliknya sendiri
         $count = UmkmDesign::where('status', 'revision_needed')
             ->where('designer_id', $user->id)
             ->count();
+        return $count > 0 ? 'danger' : null;
     } else {
-        $count = UmkmDesign::whereIn('status', ['pending', 'revised'])->count();
+        $hasDanger = UmkmDesign::where('status', 'revision_needed')->exists();
+        if ($hasDanger) return 'danger';
+        $hasWarning = UmkmDesign::where('status', 'pending')->exists();
+        if ($hasWarning) return 'warning';
+        return null;
     }
-
-    return $count > 0 ? (string) $count : null;
 }
 
 // ====================================================================
@@ -165,9 +168,15 @@ Forms\Components\Select::make('kota_id')
     //  VALIDASI: Mencegah Penginputan Ganda untuk UMKM yang Sama
     // ====================================================================
     ->unique(
-        table: 'umkm_designs',     // Nama tabel database Anda
-        column: 'umkm_id',          // Nama kolom yang harus unik di tabel tersebut
-        ignorable: fn ($record) => $record // Mengabaikan id data ini sendiri sewaktu Edit Mode
+        table: 'umkm_designs',
+        column: 'umkm_id',
+        ignorable: fn ($record) => $record, // Mengabaikan id data ini sendiri sewaktu Edit Mode
+        modifyRuleUsing: function (\Illuminate\Validation\Rules\Unique $rule, Forms\Get $get) {
+            // Izinkan submit baru jika record yang ada statusnya 'revision_needed'
+            return $rule->where(function ($query) {
+                $query->where('status', '!=', 'revision_needed');
+            });
+        }
     )
     // Custom pesan error agar informatif bagi Team Design
     ->validationMessages([

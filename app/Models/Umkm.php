@@ -80,7 +80,14 @@ class Umkm extends Model
     'foto_kanan',
     'foto_kiri',
     'foto_plang_alfamart',
+    'foto_tampak_jauh',
     'video_validasi',
+
+    // Operasional
+    'jam_buka',
+    'jam_tutup',
+    'request_text',
+    'catatan',
 
     // design final (hasil revisi jika ada)
       'design_final',

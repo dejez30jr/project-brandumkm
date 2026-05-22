@@ -27,5 +27,10 @@ class UmkmDesignObserver
         if ($design->isDirty('status') && $design->status === 'revision_needed') {
             NotifikasiService::notifyDesignRevision($design);
         }
+
+        // Notifikasi jika status berubah ke revised (designer sudah selesai revisi)
+        if ($design->isDirty('status') && $design->status === 'revised') {
+            NotifikasiService::notifyDesignRevised($design);
+        }
     }
 }

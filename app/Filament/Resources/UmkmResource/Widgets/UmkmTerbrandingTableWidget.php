@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Widgets;
+namespace App\Filament\Resources\UmkmResource\Widgets;
 
 use App\Models\Umkm;
 use Filament\Tables;

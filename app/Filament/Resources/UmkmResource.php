@@ -93,19 +93,6 @@ public static function canDelete($record): bool
     return in_array($user->role, ['admin', 'pic_lapangan']);
 }
 
- // Jika user login adalah client, filter data sesuai user_id
-    public static function getTableQuery(): \Illuminate\Database\Eloquent\Builder
-{
-    $query = parent::getTableQuery();
-
-    if (auth()->user()->isClient()) {
-        $query->where('client_id', auth()->id());
-    }
-
-    return $query;
-}
-
-
     // Helper function untuk menghitung m2 dari W x H (cm)
     private static function calculateM2(?float $width, ?float $height): float
     {
@@ -163,12 +150,25 @@ public static function canDelete($record): bool
                         Forms\Components\TextInput::make('no_wa')
                             ->label('No. WhatsApp')
                             ->tel()
-                             ->unique(table: Umkm::class, column: 'nama_pemilik', ignoreRecord: true)
+                             ->unique(table: Umkm::class, column: 'no_wa', ignoreRecord: true)
                             ->required(),
 
                         Forms\Components\TextInput::make('radius')
                             ->label('Radius dari Alfamart')
                             ->placeholder('Contoh:50,20...'),
+
+                        Forms\Components\TextInput::make('request_text')
+                            ->label('Teks Branding yang Diminta')
+                            ->placeholder('Contoh: Aneka Gorengan UMY')
+                            ->columnSpanFull(),
+
+                        Forms\Components\TimePicker::make('jam_buka')
+                            ->label('Jam Buka')
+                            ->seconds(false),
+
+                        Forms\Components\TimePicker::make('jam_tutup')
+                            ->label('Jam Tutup')
+                            ->seconds(false),
 
                         Forms\Components\Select::make('kota_id')
     ->label('Kota')
@@ -198,7 +198,7 @@ public static function canDelete($record): bool
                     ->schema([
                         Forms\Components\TextInput::make('no_rekening')
                             ->label('No. Rekening')
-                            ->unique(table: Umkm::class, column: 'nama_pemilik', ignoreRecord: true)
+                            ->unique(table: Umkm::class, column: 'no_rekening', ignoreRecord: true)
                             ->required(),
 
                         Forms\Components\Select::make('nama_bank') // Sesuaikan dengan nama kolom di database Anda
@@ -315,7 +315,6 @@ public static function canDelete($record): bool
                     ->numeric()
                     ->step(0.00000001)
                     ->placeholder('Mengambil lokasi...')
-                    ->readOnly()
                     ->live(),
                     
                 Forms\Components\TextInput::make('longitude')
@@ -323,7 +322,6 @@ public static function canDelete($record): bool
                     ->numeric()
                     ->step(0.00000001)
                     ->placeholder('Mengambil lokasi...')
-                    ->readOnly()
                     ->live(),
             ]),
 
@@ -331,8 +329,7 @@ public static function canDelete($record): bool
             ->label('Google Maps URL')
             ->required()
             ->url()
-            ->placeholder('Otomatis terisi...')
-            ->readOnly()
+            ->placeholder('Otomatis terisi atau isi manual...')
             ->columnSpanFull()
             ->suffixAction(
                 Forms\Components\Actions\Action::make('openMap')
@@ -713,6 +710,23 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
     ->downloadable()
     ->previewable(),
 
+Forms\Components\FileUpload::make('foto_tampak_jauh')
+    ->required()
+    ->label('FOTO TAMPAK JAUH (KESELURUHAN AREA)')
+    ->disk('public')
+    ->directory('umkm-fotos')
+    ->image()
+    ->visibility('public')
+    ->imagePreviewHeight('200')
+    ->loadingIndicatorPosition('left')
+    ->panelAspectRatio('2:1')
+    ->panelLayout('integrated')
+    ->removeUploadedFileButtonPosition('right')
+    ->uploadProgressIndicatorPosition('left')
+    ->openable()
+    ->downloadable()
+    ->previewable(),
+
             ])
 
     ])
@@ -729,6 +743,16 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
                     ->visibility('public')
                     ->acceptedFileTypes(['video/mp4', 'video/quicktime', 'video/x-msvideo'])
                     ->placeholder('Klik untuk upload video'),
+            ])
+            ->collapsible(),
+
+        // Section Catatan PIC Lapangan
+        Forms\Components\Section::make('Catatan Tambahan')
+            ->schema([
+                Forms\Components\Textarea::make('catatan')
+                    ->label('Catatan PIC Lapangan')
+                    ->placeholder('Contoh: Lokasi sebelah Alfamart, area UMY')
+                    ->rows(3),
             ])
             ->collapsible(),
                     ]),

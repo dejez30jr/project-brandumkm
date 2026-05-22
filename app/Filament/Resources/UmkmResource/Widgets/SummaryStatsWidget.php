@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Widgets;
+namespace App\Filament\Resources\UmkmResource\Widgets;
 
 use App\Filament\Resources\UmkmDesignResource;
 use App\Filament\Resources\UmkmResource;
@@ -14,6 +14,9 @@ use Illuminate\Support\HtmlString; // WAJIB ADA
 
 class SummaryStatsWidget extends BaseWidget {
     protected static ?int $sort = 1;
+
+    // TASK-21: Matikan polling agar tidak query DB setiap 5 detik
+    protected static ?string $pollingInterval = null;
 
     // ====================================================================
     // ATUR RESPONSIVE GRID (2 Kolom di Mobile, 3 di Tablet, 4 di Desktop)
@@ -37,7 +40,27 @@ class SummaryStatsWidget extends BaseWidget {
         // Memaksa nilai angka utama dan ikon menjadi putih terang via Tailwind Utility beserta Icon Deskripsi
         $extraHtmlStyles = [
             'class' => '[&_*]:text-white [&_*]:text-white/90 [&_p]:text-white [&_span]:text-white [&_svg]:!text-white'
-        ];  
+        ];
+
+        // TASK-22: Batch query UmkmDesign agar tidak N+1
+        $designCounts = null;
+        if (in_array($userRole, ['design', 'admin', 'client'])) {
+            if ($userRole === 'design') {
+                $designCounts = UmkmDesign::selectRaw("
+                    SUM(CASE WHEN status = 'approved' AND designer_id = ? THEN 1 ELSE 0 END) as approved,
+                    SUM(CASE WHEN status = 'revision_needed' AND designer_id = ? THEN 1 ELSE 0 END) as revision_needed,
+                    SUM(CASE WHEN status = 'revised' AND designer_id = ? THEN 1 ELSE 0 END) as revised,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_all
+                ", [$user->id, $user->id, $user->id])->first();
+            } else {
+                $designCounts = UmkmDesign::selectRaw("
+                    SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
+                    SUM(CASE WHEN status = 'revision_needed' THEN 1 ELSE 0 END) as revision_needed,
+                    SUM(CASE WHEN status = 'revised' THEN 1 ELSE 0 END) as revised,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_all
+                ")->first();
+            }
+        }
 
         // ====================================================================
         // NEW CODE - 1. CARD: UMKM YANG PERLU DI BRANDING (Akses: team_pasang)
@@ -130,7 +153,7 @@ class SummaryStatsWidget extends BaseWidget {
         }
 
         if( in_array($userRole, ['client']) ) {
-            $stats[] = Stat::make( new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Design Perlu Review</span>'), UmkmDesign::where( 'status', 'pending' )->count() )
+            $stats[] = Stat::make( new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Design Perlu Review</span>'), $designCounts?->pending_all ?? 0 )
             ->description( new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Menunggu review</span>') )
             ->descriptionIcon( 'heroicon-m-clock' )
             ->color( 'warning' )
@@ -181,7 +204,7 @@ if (in_array($userRole, ['design', 'admin'])) {
     // 1. Design Approved
     $stats[] = Stat::make(
         new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Design Approved</span>'),
-        ($userRole === 'design' ? UmkmDesign::where('status', 'approved')->where('designer_id', $user->id) : UmkmDesign::where('status', 'approved'))->count()
+        $designCounts?->approved ?? 0
     )
     ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Design disetujui</span>'))
     ->descriptionIcon('heroicon-m-paint-brush')
@@ -196,7 +219,7 @@ if (in_array($userRole, ['design', 'admin'])) {
     // 2. Design Perlu Revisi
     $stats[] = Stat::make(
         new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Design Perlu Revisi</span>'),
-        ($userRole === 'design' ? UmkmDesign::where('status', 'revision_needed')->where('designer_id', $user->id) : UmkmDesign::where('status', 'revision_needed'))->count()
+        $designCounts?->revision_needed ?? 0
     )
     ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Perlu diperbaiki</span>'))
     ->descriptionIcon('heroicon-m-exclamation-triangle')
@@ -211,7 +234,7 @@ if (in_array($userRole, ['design', 'admin'])) {
     // 3. Design Sudah Direvisi
     $stats[] = Stat::make(
         new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Design Sudah Direvisi</span>'),
-        ($userRole === 'design' ? UmkmDesign::where('status', 'revised')->where('designer_id', $user->id) : UmkmDesign::where('status', 'revised'))->count()
+        $designCounts?->revised ?? 0
     )
     ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Menunggu review ulang</span>'))
     ->descriptionIcon('heroicon-m-arrow-path-rounded-square')

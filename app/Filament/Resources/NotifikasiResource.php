@@ -111,7 +111,7 @@ public static function table(Table $table): Table
                 } elseif ($userRole === 'client') {
                     $query->whereIn('judul', ['UMKM Baru Masuk','Design Baru Upload', 'Desain Telah Direvisi 🎨']);
                 } elseif ($userRole === 'pic_lapangan') {
-                    $query->whereIn('judul', ['UMKM Baru Masuk']);
+                    $query->whereIn('judul', ['Design Perlu Revisi', 'Design Perlu Revisi ⚠️']);
                 } elseif ($userRole === 'team_pasang') {
                     $query->where('judul', 'UMKM Perlu Branding');
                 }
