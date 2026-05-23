@@ -6,7 +6,7 @@
 |----------|---------|-------------|
 | CPU | 2 vCPU | 4 vCPU |
 | RAM | 4 GB | 8 GB |
-| Storage | 100 GB SSD | 250 GB SSD |
+| Storage | 100 GB SSD | 200 GB SSD |
 | OS | Ubuntu 22.04 | Ubuntu 22.04 |
 | Bandwidth | Unmetered | Unmetered |
 
