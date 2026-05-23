@@ -52,24 +52,22 @@ class UmkmResource extends Resource
     return $query;
 }
 
-    // Badge notifikasi
     public static function getNavigationBadge(): ?string
     {
+        $user = auth()->user();
+        if (!$user || !in_array($user->role, ['client', 'admin'])) return null;
+
         $count = Umkm::where('status', 'pending')->count();
         return $count > 0 ? (string) $count : null;
     }
 
-    // Warna badge
     public static function getNavigationBadgeColor(): ?string
     {
-        $count = Umkm::where('status', 'pending')->count();
-        return $count > 5 ? 'danger' : 'warning'; // Merah jika > 5, kuning jika <= 5
-    }
+        $user = auth()->user();
+        if (!$user || !in_array($user->role, ['client', 'admin'])) return null;
 
-    // Tooltip badge (opsional)
-    public static function getNavigationBadgeTooltip(): ?string
-    {
-        return 'UMKM menunggu persetujuan';
+        $count = Umkm::where('status', 'pending')->count();
+        return $count > 5 ? 'danger' : 'warning';
     }
     
 
@@ -79,11 +77,11 @@ class UmkmResource extends Resource
     $user = auth()->user();
     return $user && in_array($user->role, ['pic_lapangan']);
 }
-// tombol edit hanya untuk pic_lapangan 
 public static function canEdit($record): bool
 {
     $user = auth()->user();
-    return in_array($user->role, ['pic_lapangan']);
+    if (!$user || $user->role !== 'pic_lapangan') return false;
+    return $record->status === 'pending';
 }
 
 // tombol delete  hanya untuk pic_lapangan dan admin
@@ -496,70 +494,23 @@ public static function canDelete($record): bool
         // ========== PANEL DEPAN ==========
         Forms\Components\Section::make('Panel Depan')
             ->description(function (Get $get): string {
-                $total = self::calculatePanelTotal($get, 'depan');
-                return "{$total} M²";
+                $atas = self::calculateM2(floatval($get('depan_atas_w')), floatval($get('depan_atas_h')));
+                $bawah = self::calculateM2(floatval($get('depan_bawah_w')), floatval($get('depan_bawah_h')));
+                return round($atas + $bawah, 2) . ' M²';
             })
             ->schema([
-                // Bagian Atas
                 Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\Placeholder::make('depan_atas_label')
-                            ->label('')
-                            ->content('Bagian Atas'),
-                        Forms\Components\TextInput::make('depan_atas_w')
-                            ->required()
-                            ->label('W (cm)')
-                             ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('depan_atas_h')
-                            ->label('H (cm)')
-                            ->required()
-                             ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('depan_atas_label')->label('')->content('Bagian Atas'),
+                        Forms\Components\TextInput::make('depan_atas_w')->required()->label('P (cm)')->placeholder('contoh: 163')->numeric()->live(onBlur: true),
+                        Forms\Components\TextInput::make('depan_atas_h')->label('T (cm)')->required()->placeholder('contoh: 20')->numeric()->live(onBlur: true),
                     ]),
                 Forms\Components\Hidden::make('depan_panel_atas_m2'),
-
-                // Bagian Tengah
                 Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\Placeholder::make('depan_tengah_label')
-                            ->label('')
-                            ->content('Bagian Tengah'),
-                        Forms\Components\TextInput::make('depan_tengah_w')
-                            ->label('W (cm)')
-                            ->required()
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('depan_tengah_h')
-                            ->label('H (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
-                    ]),
-                Forms\Components\Hidden::make('depan_panel_tengah_m2'),
-
-                // Bagian Bawah
-                Forms\Components\Grid::make(3)
-                    ->schema([
-                        Forms\Components\Placeholder::make('depan_bawah_label')
-                            ->label('')
-                            ->content('Bagian Bawah'),
-                        Forms\Components\TextInput::make('depan_bawah_w')
-                            ->label('W (cm)')
-                            ->required()
-                             ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('depan_bawah_h')
-                            ->label('H (cm)')
-                            ->required()
-                            ->numeric()
-                            ->placeholder('contoh:100../0')
-                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('depan_bawah_label')->label('')->content('Bagian Bawah'),
+                        Forms\Components\TextInput::make('depan_bawah_w')->label('P (cm)')->required()->placeholder('contoh: 163')->numeric()->live(onBlur: true),
+                        Forms\Components\TextInput::make('depan_bawah_h')->label('T (cm)')->required()->numeric()->placeholder('contoh: 62')->live(onBlur: true),
                     ]),
                 Forms\Components\Hidden::make('depan_panel_bawah_m2'),
             ])
@@ -569,70 +520,23 @@ public static function canDelete($record): bool
         // ========== PANEL KANAN ==========
         Forms\Components\Section::make('Panel Kanan')
             ->description(function (Get $get): string {
-                $total = self::calculatePanelTotal($get, 'kanan');
-                return "{$total} M²";
+                $atas = self::calculateM2(floatval($get('kanan_atas_w')), floatval($get('kanan_atas_h')));
+                $bawah = self::calculateM2(floatval($get('kanan_bawah_w')), floatval($get('kanan_bawah_h')));
+                return round($atas + $bawah, 2) . ' M²';
             })
             ->schema([
-                // Bagian Atas
                 Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\Placeholder::make('kanan_atas_label')
-                            ->label('')
-                            ->content('Bagian Atas'),
-                        Forms\Components\TextInput::make('kanan_atas_w')
-                            ->label('W (cm)')
-                            ->required()
-                             ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('kanan_atas_h')
-                            ->label('H (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('kanan_atas_label')->label('')->content('Bagian Atas'),
+                        Forms\Components\TextInput::make('kanan_atas_w')->label('P (cm)')->required()->placeholder('contoh: 54')->numeric()->live(onBlur: true),
+                        Forms\Components\TextInput::make('kanan_atas_h')->label('T (cm)')->numeric()->placeholder('contoh: 20')->required()->live(onBlur: true),
                     ]),
                 Forms\Components\Hidden::make('kanan_panel_atas_m2'),
-
-                // Bagian Tengah
                 Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\Placeholder::make('kanan_tengah_label')
-                            ->label('')
-                            ->content('Bagian Tengah'),
-                        Forms\Components\TextInput::make('kanan_tengah_w')
-                            ->label('W (cm)')
-                            ->required()
-                             ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('kanan_tengah_h')
-                            ->label('H (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
-                    ]),
-                Forms\Components\Hidden::make('kanan_panel_tengah_m2'),
-
-                // Bagian Bawah
-                Forms\Components\Grid::make(3)
-                    ->schema([
-                        Forms\Components\Placeholder::make('kanan_bawah_label')
-                            ->label('')
-                            ->content('Bagian Bawah'),
-                        Forms\Components\TextInput::make('kanan_bawah_w')
-                            ->label('W (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('kanan_bawah_h')
-                            ->label('H (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('kanan_bawah_label')->label('')->content('Bagian Bawah'),
+                        Forms\Components\TextInput::make('kanan_bawah_w')->label('P (cm)')->numeric()->placeholder('contoh: 49')->required()->live(onBlur: true),
+                        Forms\Components\TextInput::make('kanan_bawah_h')->label('T (cm)')->numeric()->placeholder('contoh: 58')->required()->live(onBlur: true),
                     ]),
                 Forms\Components\Hidden::make('kanan_panel_bawah_m2'),
             ])
@@ -642,70 +546,23 @@ public static function canDelete($record): bool
         // ========== PANEL KIRI ==========
         Forms\Components\Section::make('Panel Kiri')
             ->description(function (Get $get): string {
-                $total = self::calculatePanelTotal($get, 'kiri');
-                return "{$total} M²";
+                $atas = self::calculateM2(floatval($get('kiri_atas_w')), floatval($get('kiri_atas_h')));
+                $bawah = self::calculateM2(floatval($get('kiri_bawah_w')), floatval($get('kiri_bawah_h')));
+                return round($atas + $bawah, 2) . ' M²';
             })
             ->schema([
-                // Bagian Atas
                 Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\Placeholder::make('kiri_atas_label')
-                            ->label('')
-                            ->content('Bagian Atas'),
-                        Forms\Components\TextInput::make('kiri_atas_w')
-                            ->label('W (cm)')
-                            ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->required()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('kiri_atas_h')
-                            ->label('H (cm)')
-                             ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->required()
-                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('kiri_atas_label')->label('')->content('Bagian Atas'),
+                        Forms\Components\TextInput::make('kiri_atas_w')->label('P (cm)')->placeholder('contoh: 54')->numeric()->required()->live(onBlur: true),
+                        Forms\Components\TextInput::make('kiri_atas_h')->label('T (cm)')->placeholder('contoh: 20')->numeric()->required()->live(onBlur: true),
                     ]),
                 Forms\Components\Hidden::make('kiri_panel_atas_m2'),
-
-                // Bagian Tengah
                 Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\Placeholder::make('kiri_tengah_label')
-                            ->label('')
-                            ->content('Bagian Tengah'),
-                        Forms\Components\TextInput::make('kiri_tengah_w')
-                            ->label('W (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('kiri_tengah_h')
-                            ->label('H (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
-                    ]),
-                Forms\Components\Hidden::make('kiri_panel_tengah_m2'),
-
-                // Bagian Bawah
-                Forms\Components\Grid::make(3)
-                    ->schema([
-                        Forms\Components\Placeholder::make('kiri_bawah_label')
-                            ->label('')
-                            ->content('Bagian Bawah'),
-                        Forms\Components\TextInput::make('kiri_bawah_w')
-                            ->label('W (cm)')
-                            ->required()
-                             ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('kiri_bawah_h')
-                            ->label('H (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('kiri_bawah_label')->label('')->content('Bagian Bawah'),
+                        Forms\Components\TextInput::make('kiri_bawah_w')->label('P (cm)')->required()->placeholder('contoh: 54')->numeric()->live(onBlur: true),
+                        Forms\Components\TextInput::make('kiri_bawah_h')->label('T (cm)')->numeric()->placeholder('contoh: 62')->required()->live(onBlur: true),
                     ]),
                 Forms\Components\Hidden::make('kiri_panel_bawah_m2'),
             ])
@@ -715,9 +572,12 @@ public static function canDelete($record): bool
         Forms\Components\Placeholder::make('total_area_display')
             ->label('Total Area Branding')
             ->content(function (Get $get): \Illuminate\Support\HtmlString {
-                $depan = self::calculatePanelTotal($get, 'depan');
-                $kanan = self::calculatePanelTotal($get, 'kanan');
-                $kiri = self::calculatePanelTotal($get, 'kiri');
+                $depan = self::calculateM2(floatval($get('depan_atas_w')), floatval($get('depan_atas_h')))
+                       + self::calculateM2(floatval($get('depan_bawah_w')), floatval($get('depan_bawah_h')));
+                $kanan = self::calculateM2(floatval($get('kanan_atas_w')), floatval($get('kanan_atas_h')))
+                       + self::calculateM2(floatval($get('kanan_bawah_w')), floatval($get('kanan_bawah_h')));
+                $kiri  = self::calculateM2(floatval($get('kiri_atas_w')), floatval($get('kiri_atas_h')))
+                       + self::calculateM2(floatval($get('kiri_bawah_w')), floatval($get('kiri_bawah_h')));
                 $total = round($depan + $kanan + $kiri, 2);
                 
                 if ($total >= 1.5) {
