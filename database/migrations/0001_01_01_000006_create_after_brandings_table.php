@@ -1,5 +1,3 @@
-// database/migrations/xxxx_create_after_brandings_table.php
-
 <?php
 
 use Illuminate\Database\Migrations\Migration;

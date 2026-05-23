@@ -1,5 +1,3 @@
-// database/migrations/xxxx_create_umkm_designs_table.php
-
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -18,7 +16,7 @@ return new class extends Migration
             $table->string('gerobak_depan')->nullable();
             $table->string('gerobak_kiri')->nullable();
             $table->string('gerobak_kanan')->nullable();
-            $table->enum('status', ['pending', 'approved', 'revision_needed', 'revised'])->default('pending');
+            $table->enum('status', ['pending', 'approved', 'revision_needed', 'revised'])->default('pending')->index();
             $table->text('catatan_revisi')->nullable();
             $table->integer('versi')->default(1);
             $table->timestamp('approved_at')->nullable();

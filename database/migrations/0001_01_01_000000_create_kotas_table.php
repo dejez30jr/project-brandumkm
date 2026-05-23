@@ -1,5 +1,3 @@
-// database/migrations/xxxx_create_kotas_table.php
-
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -12,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('kotas', function (Blueprint $table) {
             $table->id();
-            $table->string('nama'); // bogor, depok, tangerang, dll
+            $table->string('nama')->unique();
             $table->timestamps();
         });
     }
