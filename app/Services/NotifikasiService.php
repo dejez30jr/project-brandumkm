@@ -11,9 +11,8 @@ class NotifikasiService
 {
     public static function notifyNewUmkm(Umkm $umkm): void
     {
-        // Notify Admin & Client
         $users = User::whereIn('role', ['admin', 'client'])->get();
-        
+
         foreach ($users as $user) {
             Notifikasi::create([
                 'user_id' => $user->id,
@@ -28,9 +27,8 @@ class NotifikasiService
 
     public static function notifyUmkmApproved(Umkm $umkm): void
     {
-        // Notify Team Design
         $designers = User::where('role', 'design')->get();
-        
+
         foreach ($designers as $designer) {
             Notifikasi::create([
                 'user_id' => $designer->id,
@@ -42,7 +40,6 @@ class NotifikasiService
             ]);
         }
 
-        // Notify PIC bahwa UMKM-nya di-acc
         Notifikasi::create([
             'user_id' => $umkm->submitted_by,
             'judul' => 'UMKM Anda Disetujui ✅',
@@ -55,7 +52,6 @@ class NotifikasiService
 
     public static function notifyUmkmRejected(Umkm $umkm): void
     {
-        // Notify PIC bahwa UMKM-nya di-reject
         Notifikasi::create([
             'user_id' => $umkm->submitted_by,
             'judul' => 'UMKM Anda Ditolak ❌',
@@ -68,9 +64,8 @@ class NotifikasiService
 
     public static function notifyNewDesign(UmkmDesign $design): void
     {
-        // Notify Admin & Client
         $users = User::whereIn('role', ['admin', 'client'])->get();
-        
+
         foreach ($users as $user) {
             Notifikasi::create([
                 'user_id' => $user->id,
@@ -85,7 +80,6 @@ class NotifikasiService
 
     public static function notifyDesignRevision(UmkmDesign $design): void
     {
-        // Notify Designer
         Notifikasi::create([
             'user_id' => $design->designer_id,
             'judul' => 'Design Perlu Revisi',
@@ -98,7 +92,6 @@ class NotifikasiService
 
     public static function notifyDesignRevised(UmkmDesign $design): void
     {
-        // Notify Admin & Client saat designer sudah selesai revisi
         $users = User::whereIn('role', ['admin', 'client'])->get();
 
         foreach ($users as $user) {
@@ -109,6 +102,22 @@ class NotifikasiService
                 'tipe' => 'revised',
                 'notifiable_type' => UmkmDesign::class,
                 'notifiable_id' => $design->id,
+            ]);
+        }
+    }
+
+    public static function notifyTeamPasangDesignApproved(UmkmDesign $design): void
+    {
+        $users = User::where('role', 'team_pasang')->get();
+
+        foreach ($users as $user) {
+            Notifikasi::create([
+                'user_id' => $user->id,
+                'judul' => 'UMKM Siap Pasang Stiker 🎯',
+                'pesan' => "Design untuk {$design->umkm->nama_usaha} ({$design->umkm->kota->nama}) telah disetujui. Siap untuk pemasangan stiker.",
+                'tipe' => 'siap_pasang',
+                'notifiable_type' => Umkm::class,
+                'notifiable_id' => $design->umkm->id,
             ]);
         }
     }
