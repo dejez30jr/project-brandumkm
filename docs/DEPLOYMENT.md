@@ -4,13 +4,19 @@
 
 | Resource | Minimum | Rekomendasi |
 |----------|---------|-------------|
-| CPU | 1 vCPU | 2 vCPU |
-| RAM | 2 GB | 4 GB |
-| Storage | 20 GB SSD | 50 GB SSD |
+| CPU | 2 vCPU | 4 vCPU |
+| RAM | 4 GB | 8 GB |
+| Storage | 100 GB SSD | 250 GB SSD |
 | OS | Ubuntu 22.04 | Ubuntu 22.04 |
+| Bandwidth | Unmetered | Unmetered |
 
-Estimasi storage: 2000 UMKM × (5 foto ~2MB + 1 video ~30MB + design ~5MB) ≈ 75 GB total.
-Untuk awal 50 GB cukup, nanti bisa expand.
+**Estimasi storage:**
+- Per UMKM: 5 foto (~20MB) + 1 video (~40MB) + design (~10MB) + stiker (~15MB) = **~85MB**
+- 2000 UMKM × 85MB = **~170 GB** file upload
+- Database + OS + buffer = ~30 GB
+- **Total kebutuhan: ~200 GB**
+
+Rekomendasi: mulai dengan 250 GB SSD, atau gunakan object storage (S3/MinIO) untuk file upload jika ingin hemat disk VPS.
 
 ---
 
