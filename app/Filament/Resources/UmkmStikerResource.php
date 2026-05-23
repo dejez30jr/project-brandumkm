@@ -40,17 +40,18 @@ class UmkmStikerResource extends Resource
                      Forms\Components\Section::make('Informasi UMKM')
     ->schema([
 
-        // SELECT KOTA
-        Forms\Components\Select::make('kota_id')
-            ->label('Pilih Kota')
-            ->options(Kota::pluck('nama', 'id'))
-            ->searchable()
-            ->preload()
-            ->live()
-            ->required(),
+       // SELECT KOTA
+Forms\Components\Select::make('kota_id')
+    ->label('Pilih Kota')
+    ->options(Kota::pluck('nama', 'id'))
+    ->searchable()
+    ->preload()
+    ->live()
+    ->required()
+    ->visibleOn('create'),
 
-        // SELECT UMKM
-      Forms\Components\Select::make('umkm_id')
+// SELECT UMKM
+Forms\Components\Select::make('umkm_id')
     ->label('Pilih UMKM')
     ->options(function (callable $get) {
 
@@ -82,7 +83,8 @@ class UmkmStikerResource extends Resource
             $set('nama_pemilik', $umkm->nama_pemilik);
         }
     })
-    ->required(),
+    ->required()
+    ->visibleOn('create'),
         // AUTO FILL
         Forms\Components\TextInput::make('nama_usaha')
             ->label('Nama UMKM')
@@ -263,20 +265,6 @@ class UmkmStikerResource extends Resource
                 !empty($record->design_gerobak_kiri) ||
                 !empty($record->design_gerobak_kanan)
             ),
-
-        // ACTION DOWNLOAD
-        \Filament\Infolists\Components\Actions::make([
-
-            \Filament\Infolists\Components\Actions\Action::make('download_design_final')
-                ->label('Download Design Final')
-                ->icon('heroicon-o-arrow-down-tray')
-                ->color('success')
-                ->url(fn ($record) => asset('storage/' . $record->design_final))
-                ->openUrlInNewTab()
-                ->visible(fn ($record) => !empty($record->design_final)),
-
-        ])->fullWidth(),
-
     ]),
             ])
             ->bulkActions([]);
