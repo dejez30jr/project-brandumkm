@@ -3,20 +3,18 @@
 ## Prasyarat Wajib
 
 ### 1. HTTPS (SSL) — WAJIB
-GPS/Geolocation **tidak akan berfungsi** tanpa HTTPS. Ini adalah requirement dari browser/WebView.
+GPS/Geolocation **tidak akan berfungsi** tanpa HTTPS.
 - Production harus pakai SSL (Let's Encrypt gratis)
-- Tanpa HTTPS, `navigator.geolocation` akan return error atau tidak tersedia sama sekali
+- Tanpa HTTPS, `navigator.geolocation` tidak tersedia
 
 ### 2. Konfigurasi WebIntoApp / Custom WebView
 
-Jika menggunakan **WebIntoApp** (webintoapp.com), pastikan setting berikut diaktifkan:
-
 #### Di WebIntoApp Dashboard:
 - ✅ **Location Permission** → Enable
-- ✅ **GPS Access** → Enable  
+- ✅ **GPS Access** → Enable
 - ✅ **Geolocation** → Enable
 - ✅ **File Upload** → Enable (untuk foto & video)
-- ✅ **Camera Access** → Enable (jika mau langsung foto dari kamera)
+- ✅ **Camera Access** → Enable
 
 #### Di AndroidManifest.xml (jika custom build):
 ```xml
@@ -28,32 +26,29 @@ Jika menggunakan **WebIntoApp** (webintoapp.com), pastikan setting berikut diakt
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 ```
 
-#### Di WebView Activity (Java/Kotlin) — KRITIS:
+#### Di WebView Activity — KRITIS:
 ```java
-// WebView settings
 webView.getSettings().setJavaScriptEnabled(true);
 webView.getSettings().setGeolocationEnabled(true);  // ← WAJIB
 webView.getSettings().setDomStorageEnabled(true);
 webView.getSettings().setAllowFileAccess(true);
 webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
 
-// WebChromeClient — WAJIB untuk handle permission prompt
 webView.setWebChromeClient(new WebChromeClient() {
     @Override
     public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
-        // Auto-grant geolocation permission untuk domain kita
-        callback.invoke(origin, true, false);
+        callback.invoke(origin, true, false); // Auto-grant untuk domain kita
     }
 });
 ```
 
-**Tanpa `onGeolocationPermissionsShowPrompt`, GPS tidak akan pernah muncul permission dialog di WebView.**
+**Tanpa `onGeolocationPermissionsShowPrompt`, GPS tidak akan pernah berfungsi di WebView.**
 
-#### Kotlin equivalent:
+#### Kotlin:
 ```kotlin
 webView.settings.apply {
     javaScriptEnabled = true
-    setGeolocationEnabled(true)  // ← WAJIB
+    setGeolocationEnabled(true)
     domStorageEnabled = true
     allowFileAccess = true
     mediaPlaybackRequiresUserGesture = false
@@ -71,20 +66,62 @@ webView.webChromeClient = object : WebChromeClient() {
 
 ### 3. Runtime Permission (Android 6.0+)
 
-APK juga harus request runtime permission saat pertama kali dibuka:
-
 ```java
-// Di Activity onCreate atau saat pertama kali user buka fitur lokasi
-if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) 
+if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
         != PackageManager.PERMISSION_GRANTED) {
-    ActivityCompat.requestPermissions(this, 
+    ActivityCompat.requestPermissions(this,
         new String[]{
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION
-        }, 
+        },
         LOCATION_PERMISSION_REQUEST_CODE);
 }
 ```
+
+---
+
+## Behavior GPS di Aplikasi (Implementasi Saat Ini)
+
+### Kebijakan: GPS WAJIB — Tidak Ada Input Manual
+
+PIC Lapangan **tidak bisa** melewati step lokasi tanpa GPS aktif. Ini kebijakan perusahaan untuk validasi lokasi gerobak.
+
+### Flow:
+```
+PIC buka form "Tambah UMKM"
+    ↓
+Step 3 "Lokasi" terbuka
+    ↓
+FULLSCREEN OVERLAY muncul — menutupi seluruh layar
+    ↓
+Auto-request GPS
+    ↓
+┌─ GPS Berhasil:
+│   → Koordinat terisi otomatis (readOnly, tidak bisa diedit)
+│   → Google Maps URL otomatis terisi
+│   → Overlay hilang, PIC bisa lanjut ke step berikutnya
+│
+├─ GPS Ditolak (user deny permission):
+│   → Overlay TETAP MUNCUL — tidak bisa dismiss
+│   → Tampilkan instruksi cara reset permission
+│   → Polling setiap 2 detik cek apakah permission berubah
+│   → Tombol "MUAT ULANG HALAMAN" untuk force re-prompt
+│   → PIC TIDAK BISA lanjut sampai GPS di-allow
+│
+├─ GPS Tidak Aktif (device GPS off):
+│   → Overlay TETAP MUNCUL
+│   → Instruksi nyalakan GPS
+│   → Tombol retry
+│
+└─ Timeout:
+    → Auto-retry sampai 5x (interval 2 detik)
+    → Jika tetap gagal, tampilkan error + tombol retry
+```
+
+### Field yang Terpengaruh:
+- `latitude` — **required, readOnly** (hanya dari GPS)
+- `longitude` — **required, readOnly** (hanya dari GPS)
+- `sharelock_url` — **required, readOnly** (auto-generate dari koordinat)
 
 ---
 
@@ -92,31 +129,11 @@ if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCA
 
 | Masalah | Penyebab | Solusi |
 |---|---|---|
-| GPS tidak muncul permission dialog | `onGeolocationPermissionsShowPrompt` tidak di-override | Tambahkan WebChromeClient dengan override method tersebut |
-| GPS error "Izin ditolak" | User deny permission di Android | Tampilkan instruksi: Pengaturan > Aplikasi > [Nama App] > Izin > Lokasi |
-| GPS error "Lokasi tidak tersedia" | GPS device mati | Tampilkan instruksi: Nyalakan GPS di notification bar |
-| GPS tidak berfungsi sama sekali | HTTP (bukan HTTPS) | Deploy dengan SSL. Geolocation API wajib HTTPS. |
-| GPS timeout | Signal lemah / indoor | Retry otomatis (sudah ada di kode, max 3x). Fallback: input manual. |
-
----
-
-## Flow GPS di Aplikasi
-
-```
-User buka form UMKM
-    ↓
-Step 3 "Lokasi" terbuka
-    ↓
-Auto-detect GPS (delay 800ms)
-    ↓
-┌─ Berhasil → latitude/longitude terisi otomatis, map preview muncul
-│
-└─ Gagal → 
-    ├─ Retry otomatis (max 3x untuk timeout)
-    ├─ Tampilkan error message yang jelas
-    ├─ Tombol "Ambil Ulang Lokasi" muncul
-    └─ User bisa isi manual (field latitude/longitude editable)
-```
+| Overlay muncul terus, GPS tidak jalan | HTTP (bukan HTTPS) | Deploy dengan SSL |
+| Permission dialog tidak muncul di WebView | `onGeolocationPermissionsShowPrompt` tidak di-override | Tambahkan di WebChromeClient |
+| User deny → tidak bisa re-prompt | Browser cache permission "denied" | Overlay tetap block + instruksi reset + tombol reload |
+| GPS timeout terus | Indoor / signal lemah | Minta PIC ke area terbuka, retry otomatis 5x |
+| Koordinat tidak akurat | `enableHighAccuracy: false` | Sudah di-set `true` + timeout 30 detik |
 
 ---
 
@@ -125,8 +142,10 @@ Auto-detect GPS (delay 800ms)
 - [ ] Domain sudah HTTPS (SSL aktif)
 - [ ] WebIntoApp: Location Permission = ON
 - [ ] WebIntoApp: File Upload = ON
-- [ ] Test di HP Android: permission dialog muncul saat pertama buka
-- [ ] Test di HP Android: setelah allow, koordinat terisi otomatis
-- [ ] Test di HP Android: jika deny, pesan error jelas + bisa isi manual
-- [ ] Test upload foto dari kamera langsung
-- [ ] Test upload video dari galeri
+- [ ] WebIntoApp: Camera = ON
+- [ ] Test: overlay GPS muncul saat buka form UMKM
+- [ ] Test: setelah allow, koordinat terisi + overlay hilang
+- [ ] Test: setelah deny, overlay tetap block + instruksi muncul
+- [ ] Test: upload 5 foto berfungsi
+- [ ] Test: upload video (max 50MB) berfungsi
+- [ ] Test: submit UMKM berhasil tersimpan dengan koordinat
