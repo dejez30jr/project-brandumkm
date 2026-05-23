@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Filament\Resources\UmkmDesignResource;
 use App\Filament\Resources\UmkmResource;
+use App\Filament\Resources\UmkmStikerResource;
 use App\Filament\Resources\UmkmTerbrandingResource;
 use App\Models\Umkm;
 use App\Models\UmkmDesign;
@@ -100,10 +101,11 @@ class SummaryStatsWidget extends BaseWidget {
             ]));
         }
 
-        // ====================================================================
-        // 3. AKSES: PIC LAPANGAN (Untuk Tambah Data)
-        // ====================================================================
-        if ( in_array($userRole, ['pic_lapangan']) ) {
+
+        // ===============================================================
+        // NEW CODE CARD CREATE PIC. DESIGN DAN TEAM PASANG
+        // ===============================================================
+         if ( in_array($userRole, ['pic_lapangan']) ) {
             $stats[] = Stat::make( new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Create Data UMKM</span>'), 'Tambah' )
             ->description( new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Tambah data UMKM</span>') )
             ->descriptionIcon( 'heroicon-m-building-storefront' )
@@ -115,6 +117,21 @@ class SummaryStatsWidget extends BaseWidget {
                 'onmouseout' => "this.style.transform='translateY(0)'; this.style.filter='brightness(1)';"
             ]));
         }
+
+
+       if ( in_array($userRole, ['team_pasang']) ) {
+            $stats[] = Stat::make( new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Create Dokumentasi UMKM</span>'), 'Tambah' )
+            ->description( new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Craate Dokumentasi UMkM</span>') )
+            ->descriptionIcon( 'heroicon-m-building-storefront' )
+            ->color( 'primary' )
+            ->url( UmkmStikerResource::getUrl( 'create' ) )
+            ->extraAttributes(array_merge($extraHtmlStyles, [
+                'style' => $baseStyle . ' background-color: #2563eb;', // Biru Solid
+                'onmouseover' => "this.style.transform='translateY(-4px)'; this.style.filter='brightness(1.15)';",
+                'onmouseout' => "this.style.transform='translateY(0)'; this.style.filter='brightness(1)';"
+            ]));
+        }
+
 
         if ( in_array($userRole, ['design']) ) {
             $stats[] = Stat::make( new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Create Design UMKM</span>'), 'Tambah' )
@@ -128,6 +145,11 @@ class SummaryStatsWidget extends BaseWidget {
                 'onmouseout' => "this.style.transform='translateY(0)'; this.style.filter='brightness(1)';"
             ]));
         }
+
+
+        // ====================================================================
+        // 3. AKSES: PIC LAPANGAN (Untuk Tambah Data)
+        // ====================================================================
 
         if( in_array($userRole, ['client']) ) {
             $stats[] = Stat::make( new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Design Perlu Review</span>'), UmkmDesign::where( 'status', 'pending' )->count() )
@@ -286,14 +308,14 @@ if (in_array($userRole, ['admin', 'pic_lapangan', 'client'])) {
         ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #16a34a;']));
 
     // Pending (Khusus non-pic_lapangan agar tidak double dengan card di atas)
-    // if ($userRole !== 'pic_lapangan') {
-    //     $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">UMKM Perlu Review</span>'), (clone $query)->where('status', 'pending')->count())
-    //         ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Menunggu review</span>'))
-    //         ->descriptionIcon('heroicon-m-clock')
-    //         ->color('warning')
-    //         ->url($getFilter('pending'))
-    //         ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #ea580c;']));
-    // }
+    if ($userRole !== 'pic_lapangan') {
+        $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">UMKM Perlu Review</span>'), (clone $query)->where('status', 'pending')->count())
+            ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Menunggu review</span>'))
+            ->descriptionIcon('heroicon-m-clock')
+            ->color('warning')
+            ->url($getFilter('pending'))
+            ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #ac5425;']));
+    }
 
     // Ditolak
     $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">UMKM Ditolak</span>'), (clone $query)->where('status', 'rejected')->count())

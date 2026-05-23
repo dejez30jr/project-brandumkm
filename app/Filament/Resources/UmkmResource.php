@@ -31,7 +31,7 @@ class UmkmResource extends Resource
     protected static ?string $label = 'UMKM';
     protected static ?string $pluralLabel = 'Data UMKM';
 
-    // akses role design, client, admin
+       // akses role design, client, admin
     public static function canAccess(): bool
     {
         return in_array(auth()->user()?->role, ['design', 'pic_lapangan', 'client', 'admin']);
@@ -73,31 +73,31 @@ class UmkmResource extends Resource
     }
     
 
-//  tombol create disni yang bisa akses hanya oleh pic_lapangan
+    //  tombol create
   public static function canCreate(): bool
 {
     $user = auth()->user();
     return $user && in_array($user->role, ['pic_lapangan']);
 }
-// tombol edit hanya untuk pic_lapangan 
+// tombol edit
 public static function canEdit($record): bool
 {
     $user = auth()->user();
     return in_array($user->role, ['pic_lapangan']);
 }
 
-// tombol delete  hanya untuk pic_lapangan dan admin
+// tombol delete
 public static function canDelete($record): bool
 {
     $user = auth()->user();
     return in_array($user->role, ['admin', 'pic_lapangan']);
 }
 
- // Jika user login adalah client, filter data sesuai user_id
     public static function getTableQuery(): \Illuminate\Database\Eloquent\Builder
 {
     $query = parent::getTableQuery();
 
+    // Jika user login adalah client, filter data sesuai user_id
     if (auth()->user()->isClient()) {
         $query->where('client_id', auth()->id());
     }
@@ -163,7 +163,7 @@ public static function canDelete($record): bool
                         Forms\Components\TextInput::make('no_wa')
                             ->label('No. WhatsApp')
                             ->tel()
-                            ->unique(table: Umkm::class, column: 'no_wa', ignoreRecord: true)
+                             ->unique(table: Umkm::class, column: 'nama_pemilik', ignoreRecord: true)
                             ->required(),
 
                         Forms\Components\TextInput::make('radius')
@@ -547,22 +547,6 @@ public static function canDelete($record): bool
                 return "{$total} M²";
             })
             ->schema([
-            //     // validasi total area minimal 1.5 m2
-            //     Forms\Components\Hidden::make('total_area_validation')
-            //     ->dehydrated(false) // Tidak disimpan ke database
-            //     ->required()
-            //     ->rules([
-            //     fn (Get $get): \Closure => function (string $attribute, $value, \Closure $fail) use ($get) {
-            //      $depan = self::calculatePanelTotal($get, 'depan');
-            //      $kanan = self::calculatePanelTotal($get, 'kanan');
-            //      $kiri = self::calculatePanelTotal($get, 'kiri');
-            //      $total = round($depan + $kanan + $kiri, 2);
-
-            //     if ($total < 1.5) {
-            //      $fail('Total area branding minimal adalah 1.5 M². Saat ini: ' . $total . ' M².');
-            //       }
-            //     },
-            //   ]),
                 // Bagian Atas
                 Forms\Components\Grid::make(3)
                     ->schema([
@@ -823,10 +807,8 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
             ])
             ->actions([
         Tables\Actions\ViewAction::make()
-    ->slideOver() // optional biar full kanan
+    ->slideOver() // optional biar full kanan   
     ->infolist([
-
-
     // Tampilkan alasan reject jika statusnya rejected
 \Filament\Infolists\Components\TextEntry::make('alasan_reject')
     ->label('Alasan Penolakan (Reject)')
@@ -1012,7 +994,51 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
         !empty($record->design_gerobak_kiri) ||
         !empty($record->design_gerobak_kanan)
     ), // section hanya muncul kalau ada minimal 1 gambar
+ \Filament\Infolists\Components\Actions::make([
 
+    \Filament\Infolists\Components\Actions\Action::make('approve')
+        ->label('Approve')
+        ->icon('heroicon-o-check-circle')
+        ->color('success')
+        ->visible(fn ($record) =>
+            $record->status === 'pending' &&
+            auth()->user()->isClient()
+        )
+        ->action(function ($record) {
+
+            $record->update([
+                'status' => 'approved',
+                'approved_at' => now(),
+                'approved_by' => auth()->id(),
+            ]);
+
+            Notification::make()
+                ->title('UMKM berhasil di approve')
+                ->success()
+                ->send();
+        }),
+
+    \Filament\Infolists\Components\Actions\Action::make('reject')
+        ->label('Reject')
+        ->icon('heroicon-o-x-circle')
+        ->color('danger')
+        ->visible(fn ($record) =>
+            $record->status === 'pending' &&
+            auth()->user()->isClient()
+        )
+        ->action(function ($record) {
+
+            $record->update([
+                'status' => 'rejected',
+            ]);
+
+            Notification::make()
+                ->title('UMKM berhasil di reject')
+                ->danger()
+                ->send();
+        }),
+
+])->fullWidth(),
     ])
     ->modalWidth('7xl'),
               Tables\Actions\EditAction::make()

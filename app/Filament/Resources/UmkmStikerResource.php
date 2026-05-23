@@ -21,7 +21,8 @@ class UmkmStikerResource extends Resource
     protected static ?string $navigationLabel = 'Pemasangan Stiker';
     
     protected static ?string $slug = 'pemasangan-stiker';
-
+            protected static ?string $label = 'UMKM';
+    protected static ?string $pluralLabel = 'Upload Dokumentasi Stiker UMKM';
     protected static ?string $navigationIcon = 'heroicon-o-photo';
 
     public static function canAccess(): bool 
@@ -36,12 +37,62 @@ class UmkmStikerResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi UMKM')
                     ->schema([
-                        Forms\Components\TextInput::make('nama_usaha')
-                            ->disabled()
-                            ->label('Nama UMKM'),
-                        Forms\Components\TextInput::make('nama_pemilik')
-                            ->disabled()
-                            ->label('Pemilik'),
+                     Forms\Components\Section::make('Informasi UMKM')
+    ->schema([
+
+        // SELECT KOTA
+        Forms\Components\Select::make('kota_id')
+            ->label('Pilih Kota')
+            ->options(Kota::pluck('nama', 'id'))
+            ->searchable()
+            ->preload()
+            ->live()
+            ->required(),
+
+        // SELECT UMKM
+      Forms\Components\Select::make('umkm_id')
+    ->label('Pilih UMKM')
+    ->options(function (callable $get) {
+
+        $kotaId = $get('kota_id');
+
+        if (!$kotaId) {
+            return [];
+        }
+
+        return Umkm::where('status', 'approved')
+            ->where('kota_id', $kotaId)
+            ->get()
+            ->mapWithKeys(function ($umkm) {
+
+                return [
+                    $umkm->id => $umkm->nama_pemilik . ' - ' . $umkm->nama_usaha
+                ];
+            });
+    })
+    ->searchable()
+    ->preload()
+    ->live()
+    ->afterStateUpdated(function ($state, callable $set) {
+
+        $umkm = Umkm::find($state);
+
+        if ($umkm) {
+            $set('nama_usaha', $umkm->nama_usaha);
+            $set('nama_pemilik', $umkm->nama_pemilik);
+        }
+    })
+    ->required(),
+        // AUTO FILL
+        Forms\Components\TextInput::make('nama_usaha')
+            ->label('Nama UMKM')
+            ->disabled(),
+
+        Forms\Components\TextInput::make('nama_pemilik')
+            ->label('Pemilik')
+            ->disabled(),
+
+    ])->columns(2),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Upload Dokumentasi Pemasangan Stiker')
@@ -83,19 +134,33 @@ class UmkmStikerResource extends Resource
                 // ====================================================================
                 // FILTER UTAMA: Hanya tarik data UMKM yang sudah di-APPROVE oleh Admin
                 // ====================================================================
-                $query->where('status', 'approved') 
-                      ->where(function ($q) {
-                          // Dan tampilkan jika salah satu atau semua kolom stiker ini MASIH KOSONG
-                          $q->whereNull('stiker_tampak_depan')
-                            ->orWhereNull('stiker_tampak_kanan')
-                            ->orWhereNull('stiker_tampak_kiri')
-                            ->orWhereNull('foto_wide');
-                      })
-                      // Filter wilayah kota_id milik team_pasang (aktifkan jika ingin otomatis sesuai kota user)
-                      // ->when($user?->kota_id, function ($q) use ($user) {
-                      //     $q->where('kota_id', $user->kota_id);
-                      // })
-                      ->latest(); 
+           $query->where('status', 'approved')
+
+    // tampilkan hanya jika design ada
+    ->where(function ($q) {
+
+        $q->whereNotNull('design_final')
+          ->orWhereNotNull('design_gerobak_depan')
+          ->orWhereNotNull('design_gerobak_kiri')
+          ->orWhereNotNull('design_gerobak_kanan');
+    })
+
+    // SEMBUNYIKAN jika dokumentasi stiker sudah lengkap
+    ->where(function ($q) {
+
+        $q->whereNull('stiker_tampak_depan')
+          ->orWhereNull('stiker_tampak_kanan')
+          ->orWhereNull('stiker_tampak_kiri')
+          ->orWhereNull('foto_wide');
+    })
+
+
+    // Filter wilayah kota_id milik team_pasang
+    // ->when($user?->kota_id, function ($q) use ($user) {
+    //     $q->where('kota_id', $user->kota_id);
+    // })
+
+    ->latest();
             })
             ->columns([
                 Tables\Columns\TextColumn::make('nama_usaha')
@@ -126,6 +191,93 @@ class UmkmStikerResource extends Resource
                     ->label('Upload Dokumentasi')
                     ->icon('heroicon-m-arrow-up-tray')
                     ->color('success'),
+                    // pr action view popup untuk liat  detail file yang mau di print atau di download
+                   Tables\Actions\ViewAction::make('view_design')
+    ->label('View Design')
+    ->icon('heroicon-o-eye')
+    ->color('info')
+    ->slideOver()
+    ->modalHeading('Preview Design Gerobak')
+    ->modalWidth('7xl')
+
+    ->infolist([
+
+        // LIGHTBOX MODAL
+        \Filament\Infolists\Components\ViewEntry::make('image_lightbox')
+            ->view('filament.infolists.components.image-lightbox')
+            ->columnSpanFull(),
+
+        // SECTION DESIGN
+        \Filament\Infolists\Components\Section::make('Design Gerobak')
+            ->description('Preview design gerobak UMKM.')
+            ->icon('heroicon-o-paint-brush')
+            ->schema([
+
+                \Filament\Infolists\Components\ImageEntry::make('design_final')
+                    ->label('Design Final')
+                    ->height(250)
+                      ->getStateUsing(fn ($record) => asset('storage/' . $record->design_final))
+                    ->columnSpanFull()
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_final) . '" })',
+                    ])
+                    ->visible(fn ($record) => !empty($record->design_final)),
+
+                \Filament\Infolists\Components\ImageEntry::make('design_gerobak_depan')
+                    ->label('Gerobak Tampak Depan')
+                    ->height(200)
+                      ->getStateUsing(fn ($record) => asset('storage/' . $record->design_gerobak_depan))
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_gerobak_depan) . '" })',
+                    ])
+                    ->visible(fn ($record) => !empty($record->design_gerobak_depan)),
+
+                \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kiri')
+                    ->label('Gerobak Tampak Kiri')
+                    ->height(200)
+                      ->getStateUsing(fn ($record) => asset('storage/' . $record->design_gerobak_depan))
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_gerobak_kiri) . '" })',
+                    ])
+                    ->visible(fn ($record) => !empty($record->design_gerobak_kiri)),
+
+                \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kanan')
+                    ->label('Gerobak Tampak Kanan')
+                    ->height(200)
+                      ->getStateUsing(fn ($record) => asset('storage/' . $record->design_gerobak_depan))
+                    ->extraAttributes(fn ($record) => [
+                        'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
+                        'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_gerobak_kanan) . '" })',
+                    ])
+                    ->visible(fn ($record) => !empty($record->design_gerobak_kanan)),
+
+            ])
+            ->columns(2)
+            ->collapsible()
+            ->visible(fn ($record) =>
+                !empty($record->design_final) ||
+                !empty($record->design_gerobak_depan) ||
+                !empty($record->design_gerobak_kiri) ||
+                !empty($record->design_gerobak_kanan)
+            ),
+
+        // ACTION DOWNLOAD
+        \Filament\Infolists\Components\Actions::make([
+
+            \Filament\Infolists\Components\Actions\Action::make('download_design_final')
+                ->label('Download Design Final')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('success')
+                ->url(fn ($record) => asset('storage/' . $record->design_final))
+                ->openUrlInNewTab()
+                ->visible(fn ($record) => !empty($record->design_final)),
+
+        ])->fullWidth(),
+
+    ]),
             ])
             ->bulkActions([]);
     }
@@ -135,6 +287,7 @@ class UmkmStikerResource extends Resource
         return [
             'index' => Pages\ListUmkmStikers::route('/'),
             'edit' => Pages\EditUmkmStiker::route('/{record}/edit'),
+            'create' => Pages\CreateUmkmStiker::route('/create'),
         ];
     }
 }
