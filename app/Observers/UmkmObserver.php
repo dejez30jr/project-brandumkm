@@ -14,7 +14,7 @@ class UmkmObserver
 
     public function updated(Umkm $umkm): void
     {
-        if ($umkm->isDirty('status')) {
+        if ($umkm->wasChanged('status')) {
             if ($umkm->status === 'approved') {
                 NotifikasiService::notifyUmkmApproved($umkm);
             } elseif ($umkm->status === 'rejected') {
@@ -22,5 +22,4 @@ class UmkmObserver
             }
         }
     }
-    
 }
