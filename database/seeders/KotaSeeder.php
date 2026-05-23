@@ -27,7 +27,7 @@ class KotaSeeder extends Seeder
         ];
 
         foreach ($kotas as $nama) {
-            Kota::create(['nama' => $nama]);
+            Kota::updateOrCreate(['nama' => $nama]);
         }
     }
 }
