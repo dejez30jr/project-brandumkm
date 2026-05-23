@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\UmkmStikerResource\Pages;
 use App\Models\Kota;
-use App\Models\Umkm; // Kita gunakan model Umkm jika relasinya menyatu di tabel tersebut
+use App\Models\Umkm;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -14,18 +14,13 @@ use Illuminate\Database\Eloquent\Builder;
 
 class UmkmStikerResource extends Resource
 {
-    // Sesuaikan dengan nama Model utama Anda, jika kolom tersebut ada di tabel umkms, gunakan Umkm::class
-    protected static ?string $model = Umkm::class; 
-
+    protected static ?string $model = Umkm::class;
     protected static ?string $navigationLabel = 'Pemasangan Stiker';
-    
     protected static ?string $slug = 'pemasangan-stiker';
-
     protected static ?string $navigationIcon = 'heroicon-o-photo';
 
-    public static function canAccess(): bool 
+    public static function canAccess(): bool
     {
-        // Memastikan hanya admin dan team_pasang yang bisa mengakses menu ini
         return in_array(auth()->user()?->role, ['team_pasang']);
     }
 
@@ -49,25 +44,25 @@ class UmkmStikerResource extends Resource
                         Forms\Components\FileUpload::make('stiker_tampak_depan')
                             ->label('Stiker Tampak Depan')
                             ->image()
-                            ->directory('umkm-stikers')
+                            ->directory(fn ($record) => 'umkm/' . ($record?->kota_id ?: 'temp') . '/stiker')
                             ->required(),
 
                         Forms\Components\FileUpload::make('stiker_tampak_kanan')
                             ->label('Stiker Tampak Kanan')
                             ->image()
-                            ->directory('umkm-stikers')
+                            ->directory(fn ($record) => 'umkm/' . ($record?->kota_id ?: 'temp') . '/stiker')
                             ->required(),
 
                         Forms\Components\FileUpload::make('stiker_tampak_kiri')
                             ->label('Stiker Tampak Kiri')
                             ->image()
-                            ->directory('umkm-stikers')
+                            ->directory(fn ($record) => 'umkm/' . ($record?->kota_id ?: 'temp') . '/stiker')
                             ->required(),
 
                         Forms\Components\FileUpload::make('foto_wide')
                             ->label('Foto Wide (Keseluruhan)')
                             ->image()
-                            ->directory('umkm-stikers')
+                            ->directory(fn ($record) => 'umkm/' . ($record?->kota_id ?: 'temp') . '/stiker')
                             ->required(),
                     ])->columns(2),
             ]);
@@ -79,22 +74,14 @@ class UmkmStikerResource extends Resource
 
         return $table
             ->modifyQueryUsing(function (Builder $query) use ($user) {
-                // ====================================================================
-                // FILTER UTAMA: Hanya tarik data UMKM yang sudah di-APPROVE oleh Admin
-                // ====================================================================
-                $query->where('status', 'approved') 
+                $query->where('status', Umkm::STATUS_DESIGN_APPROVED)
                       ->where(function ($q) {
-                          // Dan tampilkan jika salah satu atau semua kolom stiker ini MASIH KOSONG
                           $q->whereNull('stiker_tampak_depan')
                             ->orWhereNull('stiker_tampak_kanan')
                             ->orWhereNull('stiker_tampak_kiri')
                             ->orWhereNull('foto_wide');
                       })
-                      // Filter wilayah kota_id milik team_pasang (aktifkan jika ingin otomatis sesuai kota user)
-                      // ->when($user?->kota_id, function ($q) use ($user) {
-                      //     $q->where('kota_id', $user->kota_id);
-                      // })
-                      ->latest(); 
+                      ->latest();
             })
             ->columns([
                 Tables\Columns\TextColumn::make('nama_usaha')
