@@ -547,6 +547,22 @@ public static function canDelete($record): bool
                 return "{$total} M²";
             })
             ->schema([
+            //     // validasi total area minimal 1.5 m2
+            //     Forms\Components\Hidden::make('total_area_validation')
+            //     ->dehydrated(false) // Tidak disimpan ke database
+            //     ->required()
+            //     ->rules([
+            //     fn (Get $get): \Closure => function (string $attribute, $value, \Closure $fail) use ($get) {
+            //      $depan = self::calculatePanelTotal($get, 'depan');
+            //      $kanan = self::calculatePanelTotal($get, 'kanan');
+            //      $kiri = self::calculatePanelTotal($get, 'kiri');
+            //      $total = round($depan + $kanan + $kiri, 2);
+
+            //     if ($total < 1.5) {
+            //      $fail('Total area branding minimal adalah 1.5 M². Saat ini: ' . $total . ' M².');
+            //       }
+            //     },
+            //   ]),
                 // Bagian Atas
                 Forms\Components\Grid::make(3)
                     ->schema([
