@@ -7,7 +7,7 @@
 | **Branch** | `fix/audit-and-refactor` |
 | **Mulai** | 22 Mei 2026 |
 | **Deadline** | 26 Mei 2026 |
-| **Total Isu** | 32 item |
+| **Total Isu** | 43 item |
 
 ---
 
@@ -102,17 +102,29 @@
 
 ---
 
+## Hari 5 — 26 Mei 2026 (atau setelah PHASE 4 selesai)
+### Perbaikan Lanjutan (PHASE 5)
+
+| # | Task | Prioritas | Keterangan |
+|---|---|---|---|
+| 38 | Validasi durasi video (max 2 menit) | High | Client bilang max 2 menit, belum ada enforcement |
+| 39 | State machine UMKM — tambah status lifecycle | High | Status saat ini cuma `pending/approved/rejected`, perlu `designing/design_approved/branded` |
+| 40 | Notifikasi ke PIC saat UMKM di-ACC/reject | High | PIC perlu tahu hasil review client |
+| 41 | Notifikasi ke Team Pasang saat design approved | Medium | Team pasang perlu tahu kapan stiker siap dipasang |
+| 42 | Seed 14 kota sesuai kebutuhan client | High | KotaSeeder belum lengkap |
+| 43 | File storage strategy — organisasi folder | Medium | 2000 UMKM × (5 foto + video + design + stiker) = perlu struktur folder yang jelas |
+
+---
+
 ## Backlog Fitur (Pasca Go-Live)
 
 | # | Item | Prioritas |
 |---|---|---|
 | B1 | Setup Redis untuk cache & queue | Medium |
 | B2 | `AfterBranding` — ada model & tabel tapi belum ada UI | Medium |
-| B3 | Notifikasi ke PIC saat UMKM acc/reject | Medium |
-| B4 | Notifikasi ke Team Pasang saat design approved | Medium |
-| B5 | Dashboard monitoring per kota untuk Admin | Low |
-| B6 | Refactor duplikasi kode infolist (~200 baris di 3 file) | Low |
-| B7 | PWA manifest sebagai alternatif WebIntoApp | Low |
+| B3 | Dashboard monitoring per kota untuk Admin | Low |
+| B4 | Refactor duplikasi kode infolist (~200 baris di 3 file) | Low |
+| B5 | PWA manifest sebagai alternatif WebIntoApp | Low |
 
 ---
 
@@ -124,3 +136,4 @@
 | Hari 2 | GPS + 10 bug fungsionalitas | ✅ Selesai |
 | Hari 3 | Field baru + optimasi | ✅ Selesai |
 | Hari 4 | Testing + deployment | ⏳ Pending |
+| Hari 5 | Perbaikan lanjutan (state machine, notifikasi, validasi) | ✅ Selesai |
