@@ -65,7 +65,7 @@ class UmkmTerbrandingResource extends Resource
                         Forms\Components\TextInput::make('nama_pemilik')->disabled()->label('Pemilik'),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Dokumentasi Pemasangan Stiker (Selesai)')
+                Forms\Components\Section::make('Dokumentasi Pemasangan Stiker (Proses pemotretan Wajib dalam Keadaan Cahaya yang Terang Dan Jelas)')
                     ->schema([
                         Forms\Components\FileUpload::make('stiker_tampak_depan')->disabled()->label('Tampak Depan'),
                         Forms\Components\FileUpload::make('stiker_tampak_kanan')->disabled()->label('Tampak Kanan'),
@@ -102,7 +102,6 @@ class UmkmTerbrandingResource extends Resource
                     ->searchable()
                     ->weight('bold'),
 
-                 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status UMKM')->badge()
                     ->formatStateUsing(fn ($state) => strtoupper((string) $state))
@@ -269,7 +268,7 @@ class UmkmTerbrandingResource extends Resource
                 'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_plang_alfamart) . '" })',
             ]),
 
-        // Video Entry menggunakan ViewEntry murni tanpa modal
+        // popup Entry menggunakan ViewEntry murni tanpa modal
         \Filament\Infolists\Components\ViewEntry::make('video_validasi')
             ->label('Video Validasi')
             ->view('filament.infolists.components.video-player')
