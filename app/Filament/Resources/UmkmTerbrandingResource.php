@@ -20,7 +20,6 @@ class UmkmTerbrandingResource extends Resource
 {
     // Tetap menggunakan Model Umkm karena datanya menyatu di sana
     protected static ?string $model = Umkm::class;
-    protected static string $resource = UmkmTerbrandingResource::class;
 
     protected static ?string $navigationLabel = 'UMKM Terbranding';
         protected static ?string $label = 'UMKM Terbranding';
@@ -84,16 +83,11 @@ class UmkmTerbrandingResource extends Resource
             // LOGIKA UTAMA: Hanya select UMKM yang KE-4 KOLOM STIKERNYA SUDAH TERISI
             // ====================================================================
             ->modifyQueryUsing(function (Builder $query) use ($user) {
-                $query->where('status', 'approved') 
+                $query->whereIn('status', ['branded', 'terbranding_final'])
                       ->whereNotNull('stiker_tampak_depan')
                       ->whereNotNull('stiker_tampak_kanan')
                       ->whereNotNull('stiker_tampak_kiri')
                       ->whereNotNull('foto_wide')
-                      
-                      // Filter wilayah kota (Khusus jika team_pasang yang melihat, batasi sesuai kotanya)
-                    //   ->when($user?->role === 'team_pasang' && $user?->kota_id, function ($q) use ($user) {
-                    //       $q->where('kota_id', $user->kota_id);
-                    //   })
                       ->latest(); 
             })
             ->columns([
@@ -361,11 +355,29 @@ class UmkmTerbrandingResource extends Resource
                             'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_wide) . '" })',
                         ]),
                 ])->columns(2),
+
+            // LOG PERSONALIA
+            \Filament\Infolists\Components\Section::make('Log Personalia')
+                ->description('Rekam jejak personel yang terlibat dalam proses branding.')
+                ->icon('heroicon-o-users')
+                ->schema([
+                    \Filament\Infolists\Components\TextEntry::make('submittedBy.name')
+                        ->label('Nama PIC Lapangan'),
+                    \Filament\Infolists\Components\TextEntry::make('umkmDesign.nama_desainer')
+                        ->label('Nama Desainer')
+                        ->default('-'),
+                    \Filament\Infolists\Components\TextEntry::make('nama_team_pasang')
+                        ->label('Nama Team Pasang')
+                        ->default('-'),
+                    \Filament\Infolists\Components\TextEntry::make('tanggal_pasang')
+                        ->label('Tanggal Pemasangan')
+                        ->date('d M Y')
+                        ->default('-'),
+                ])->columns(2),
     ])
     ->modalWidth('7xl')
     // Section hanya muncul jika salah satu data tersedia
     ->visible(fn ($record) => !empty($record->status_pasang) || !empty($record->updated_at)),
-               Tables\Actions\ViewAction::make()
             ])
 ->headerActions([
     Action::make('exportExcel')
