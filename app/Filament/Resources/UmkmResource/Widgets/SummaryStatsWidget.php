@@ -152,7 +152,7 @@ class SummaryStatsWidget extends BaseWidget
             $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Total UMKM Di-approve</span>'), $totalApproved)
                 ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Sudah disetujui client</span>'))
                 ->descriptionIcon('heroicon-m-check-circle')->color('success')
-                ->url(UmkmResource::getUrl('index'))
+                ->url(UmkmResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'approved_all']]]))
                 ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #16a34a;',
                     'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
 

@@ -686,8 +686,8 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
+                        'approved_all' => 'Approved',
                         'pending' => 'Pending',
-                        'approved' => 'Approved',
                         'rejected' => 'Rejected',
                         'menunggu_didesain' => 'Menunggu Di-design',
                         'designing' => 'Sedang Didesain',
@@ -699,7 +699,15 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
                         'installation_completed' => 'Installation Completed',
                         'branded' => 'Sudah Terbranding',
                         'terbranding_final' => 'UMKM Terbranding Final',
-                    ]),
+                    ])
+                    ->query(function ($query, array $data) {
+                        if (empty($data['value'])) return;
+                        if ($data['value'] === 'approved_all') {
+                            $query->whereNotIn('status', ['pending', 'rejected']);
+                        } else {
+                            $query->where('status', $data['value']);
+                        }
+                    }),
                 Tables\Filters\SelectFilter::make('kota_id')
                     ->label('Kota')
                     ->options(Kota::pluck('nama', 'id')),
@@ -914,6 +922,48 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
         !empty($record->design_gerobak_kiri) ||
         !empty($record->design_gerobak_kanan)
     ), // section hanya muncul kalau ada minimal 1 gambar
+
+    // TOMBOL AKSI — wajib di bottom per PRD (tanpa nested modal)
+    \Filament\Infolists\Components\Section::make('Tindakan')
+        ->schema([
+            \Filament\Infolists\Components\Actions::make([
+                \Filament\Infolists\Components\Actions\Action::make('approve_umkm')
+                    ->label('Approve UMKM')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->action(function (Umkm $record) {
+                        $record->update([
+                            'status' => 'approved',
+                            'approved_at' => now(),
+                            'approved_by' => auth()->id(),
+                        ]);
+                        \Filament\Notifications\Notification::make()->title('UMKM Disetujui ✅')->success()->send();
+                    }),
+
+                \Filament\Infolists\Components\Actions\Action::make('reject_umkm')
+                    ->label('Reject UMKM')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->action(function (Umkm $record, array $arguments) {
+                        $record->update([
+                            'status' => 'rejected',
+                            'alasan_reject' => $arguments['reason'] ?? 'Ditolak oleh client',
+                        ]);
+                        \Filament\Notifications\Notification::make()->title('UMKM Ditolak ❌')->danger()->send();
+                    })
+                    ->extraAttributes([
+                        'x-on:click.prevent' => "
+                            let reason = prompt('Masukkan alasan reject (wajib):');
+                            if (reason && reason.trim() !== '') {
+                                \$wire.mountInfolistAction('reject_umkm', { reason: reason });
+                            }
+                        ",
+                    ]),
+            ])->columnSpanFull(),
+        ])
+        ->visible(fn (Umkm $record) =>
+            $record->status === 'pending' && auth()->user()->isClient()
+        ),
 
     ])
     ->modalWidth('7xl'),
