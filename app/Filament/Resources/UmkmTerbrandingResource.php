@@ -386,7 +386,7 @@ class UmkmTerbrandingResource extends Resource
         ->color('success')
         ->action(function ($livewire) {
 
-            $query = $livewire->getFilteredTableQuery();
+            $query = $livewire->getFilteredTableQuery()->with(['kota', 'submittedBy', 'umkmDesign', 'approvedBy']);
 
             return \Maatwebsite\Excel\Facades\Excel::download(
                 new \App\Exports\UmkmExport($query->get()),
