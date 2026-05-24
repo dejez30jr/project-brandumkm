@@ -445,7 +445,29 @@ public static function canDelete($record): bool
                 }
             })
             ->columnSpanFull(),
-                    ]),
+                    ])
+                    ->afterValidation(function (Get $get) {
+                        $depan = self::calculateM2(floatval($get('depan_atas_w')), floatval($get('depan_atas_h')))
+                               + self::calculateM2(floatval($get('depan_bawah_w')), floatval($get('depan_bawah_h')));
+                        $kanan = self::calculateM2(floatval($get('kanan_atas_w')), floatval($get('kanan_atas_h')))
+                               + self::calculateM2(floatval($get('kanan_bawah_w')), floatval($get('kanan_bawah_h')));
+                        $kiri  = self::calculateM2(floatval($get('kiri_atas_w')), floatval($get('kiri_atas_h')))
+                               + self::calculateM2(floatval($get('kiri_bawah_w')), floatval($get('kiri_bawah_h')));
+                        $total = round($depan + $kanan + $kiri, 2);
+
+                        if ($total < 1.5) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Tidak Dapat Melanjutkan ❌')
+                                ->body("Total area branding {$total} M² kurang dari minimum 1.5 M².")
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            throw \Illuminate\Validation\ValidationException::withMessages([
+                                'depan_atas_w' => "Total area branding {$total} M² kurang dari minimum 1.5 M².",
+                            ]);
+                        }
+                    }),
 
                 // STEP 5
                 Forms\Components\Wizard\Step::make('Foto')
