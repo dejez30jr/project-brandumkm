@@ -181,6 +181,12 @@ class UmkmTerbrandingResource extends Resource
 
                 \Filament\Infolists\Components\TextEntry::make('kota.nama')
                     ->label('Kota'),
+
+                \Filament\Infolists\Components\TextEntry::make('jam_buka')
+                    ->label('Jam Buka'),
+
+                \Filament\Infolists\Components\TextEntry::make('jam_tutup')
+                    ->label('Jam Tutup'),
             ])
             ->columns(2),
 
