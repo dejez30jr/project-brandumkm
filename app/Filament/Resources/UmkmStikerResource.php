@@ -60,24 +60,44 @@ class UmkmStikerResource extends Resource
                         Forms\Components\FileUpload::make('stiker_tampak_depan')
                             ->label('Tampak Depan Terbranding')
                             ->image()
+                            ->imageResizeMode('cover')
+                            ->imageResizeTargetWidth('1200')
+                            ->imageResizeTargetHeight('1200')
+                            ->imageResizeUpscale(false)
+                            ->maxSize(5120)
                             ->directory(fn ($record) => 'umkm/' . ($record?->kota_id ?: 'temp') . '/stiker')
                             ->required(),
 
                         Forms\Components\FileUpload::make('stiker_tampak_kanan')
                             ->label('Sisi Kanan Terbranding')
                             ->image()
+                            ->imageResizeMode('cover')
+                            ->imageResizeTargetWidth('1200')
+                            ->imageResizeTargetHeight('1200')
+                            ->imageResizeUpscale(false)
+                            ->maxSize(5120)
                             ->directory(fn ($record) => 'umkm/' . ($record?->kota_id ?: 'temp') . '/stiker')
                             ->required(),
 
                         Forms\Components\FileUpload::make('stiker_tampak_kiri')
                             ->label('Sisi Kiri Terbranding')
                             ->image()
+                            ->imageResizeMode('cover')
+                            ->imageResizeTargetWidth('1200')
+                            ->imageResizeTargetHeight('1200')
+                            ->imageResizeUpscale(false)
+                            ->maxSize(5120)
                             ->directory(fn ($record) => 'umkm/' . ($record?->kota_id ?: 'temp') . '/stiker')
                             ->required(),
 
                         Forms\Components\FileUpload::make('foto_wide')
                             ->label('Foto Wide / Kejauhan')
                             ->image()
+                            ->imageResizeMode('cover')
+                            ->imageResizeTargetWidth('1200')
+                            ->imageResizeTargetHeight('1200')
+                            ->imageResizeUpscale(false)
+                            ->maxSize(5120)
                             ->directory(fn ($record) => 'umkm/' . ($record?->kota_id ?: 'temp') . '/stiker')
                             ->required(),
                     ])->columns(2),
