@@ -124,6 +124,58 @@ class UmkmStikerResource extends Resource
                     ->options(Kota::pluck('nama', 'id')),
             ])
             ->actions([
+                Tables\Actions\Action::make('viewDesign')
+                    ->label('Lihat Design')
+                    ->icon('heroicon-o-paint-brush')
+                    ->color('info')
+                    ->modalHeading('File Design untuk Printing')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->infolist(fn (Umkm $record) => [
+                        \Filament\Infolists\Components\ImageEntry::make('design_final')
+                            ->label('Screenshot File FA / Final Artwork')
+                            ->height(250)
+                            ->columnSpanFull(),
+                        \Filament\Infolists\Components\ImageEntry::make('design_gerobak_depan')
+                            ->label('Mockup Gerobak Depan')
+                            ->height(200),
+                        \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kiri')
+                            ->label('Mockup Gerobak Kiri')
+                            ->height(200),
+                        \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kanan')
+                            ->label('Mockup Gerobak Kanan')
+                            ->height(200),
+                        \Filament\Infolists\Components\Actions::make([
+                            \Filament\Infolists\Components\Actions\Action::make('download_fa')
+                                ->label('Download FA')
+                                ->icon('heroicon-o-arrow-down-tray')
+                                ->color('success')
+                                ->url(fn (Umkm $record) => $record->design_final ? asset('storage/' . $record->design_final) : null)
+                                ->openUrlInNewTab()
+                                ->visible(fn (Umkm $record) => !empty($record->design_final)),
+                            \Filament\Infolists\Components\Actions\Action::make('download_depan')
+                                ->label('Download Depan')
+                                ->icon('heroicon-o-arrow-down-tray')
+                                ->url(fn (Umkm $record) => $record->design_gerobak_depan ? asset('storage/' . $record->design_gerobak_depan) : null)
+                                ->openUrlInNewTab()
+                                ->visible(fn (Umkm $record) => !empty($record->design_gerobak_depan)),
+                            \Filament\Infolists\Components\Actions\Action::make('download_kiri')
+                                ->label('Download Kiri')
+                                ->icon('heroicon-o-arrow-down-tray')
+                                ->url(fn (Umkm $record) => $record->design_gerobak_kiri ? asset('storage/' . $record->design_gerobak_kiri) : null)
+                                ->openUrlInNewTab()
+                                ->visible(fn (Umkm $record) => !empty($record->design_gerobak_kiri)),
+                            \Filament\Infolists\Components\Actions\Action::make('download_kanan')
+                                ->label('Download Kanan')
+                                ->icon('heroicon-o-arrow-down-tray')
+                                ->url(fn (Umkm $record) => $record->design_gerobak_kanan ? asset('storage/' . $record->design_gerobak_kanan) : null)
+                                ->openUrlInNewTab()
+                                ->visible(fn (Umkm $record) => !empty($record->design_gerobak_kanan)),
+                        ])->columnSpanFull(),
+                    ])
+                    ->modalWidth('4xl')
+                    ->visible(fn (Umkm $record) => !empty($record->design_final)),
+
                 Tables\Actions\EditAction::make()
                     ->label('Upload Dokumentasi')
                     ->icon('heroicon-m-arrow-up-tray')
