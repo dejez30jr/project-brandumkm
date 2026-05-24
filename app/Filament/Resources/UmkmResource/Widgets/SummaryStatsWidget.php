@@ -76,10 +76,10 @@ class SummaryStatsWidget extends BaseWidget
                 ]));
         }
 
-        if (in_array($userRole, ['admin', 'client', 'team_pasang'])) {
+        if (in_array($userRole, ['team_pasang'])) {
             $totalSudahBranding = Umkm::whereIn('status', [Umkm::STATUS_BRANDED, Umkm::STATUS_TERBRANDING_FINAL])->count();
 
-            $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Total UMKM Sudah di-Branding</span>'), $totalSudahBranding)
+            $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Total UMKM Branded</span>'), $totalSudahBranding)
                 ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Gerobak selesai pasang stiker</span>'))
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success')
