@@ -399,52 +399,6 @@ class UmkmDesignResource extends Resource
                             ]),
                     ])->columns(2),
 
-                // TOMBOL AKSI — wajib di bottom per PRD
-                \Filament\Infolists\Components\Section::make('Tindakan')
-                    ->schema([
-                        \Filament\Infolists\Components\Actions::make([
-                            \Filament\Infolists\Components\Actions\Action::make('approve_design')
-                                ->label('Approve Design')
-                                ->icon('heroicon-o-check-circle')
-                                ->color('success')
-                                ->visible(fn (UmkmDesign $record) =>
-                                    in_array($record->status, ['pending', 'revised']) &&
-                                    auth()->user()->isClient()
-                                )
-                                ->action(function (UmkmDesign $record) {
-                                    $record->update([
-                                        'status' => 'approved',
-                                        'approved_at' => now(),
-                                        'approved_by' => auth()->id(),
-                                    ]);
-                                    \Filament\Notifications\Notification::make()->title('Design Disetujui ✅')->success()->send();
-                                }),
-
-                            \Filament\Infolists\Components\Actions\Action::make('revisi_design')
-                                ->label('Minta Revisi')
-                                ->icon('heroicon-o-pencil')
-                                ->color('warning')
-                                ->visible(fn (UmkmDesign $record) =>
-                                    in_array($record->status, ['pending', 'revised']) &&
-                                    auth()->user()->isClient()
-                                )
-                                ->action(function (UmkmDesign $record) {
-                                    $catatan = request()->input('catatan_revisi', 'Perlu revisi oleh client');
-                                    $record->update([
-                                        'status' => 'revision_needed',
-                                        'catatan_revisi' => $catatan,
-                                    ]);
-                                    if ($record->umkm) {
-                                        $record->umkm->update(['status' => Umkm::STATUS_REVISION_NEEDED]);
-                                    }
-                                    \Filament\Notifications\Notification::make()->title('Revisi Diminta')->warning()->send();
-                                }),
-                        ])->columnSpanFull(),
-                    ])
-                    ->visible(fn (UmkmDesign $record) =>
-                        in_array($record->status, ['pending', 'revised']) &&
-                        auth()->user()->isClient()
-                    ),
             ]);
     }
 
@@ -453,6 +407,7 @@ class UmkmDesignResource extends Resource
         return [
             'index' => Pages\ListUmkmDesigns::route('/'),
             'create' => Pages\CreateUmkmDesign::route('/create'),
+            'view' => Pages\ViewUmkmDesign::route('/{record}'),
             'edit' => Pages\EditUmkmDesign::route('/{record}/edit'),
         ];
     }
