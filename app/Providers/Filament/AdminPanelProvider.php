@@ -82,11 +82,9 @@ class AdminPanelProvider extends PanelProvider {
         $hasNewNotification = false;
 
         if ($user) {
-            // SINKRONISASI LOGIKA MULTI-USER:
-            // Dot biru akan menyala jika ada notifikasi yang belum dibaca (belum tercatat di tabel notifikasi_user) oleh user ini
-            $hasNewNotification = \App\Models\Notifikasi::whereDoesntHave('users', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })->exists();
+            $hasNewNotification = \App\Models\Notifikasi::where('user_id', $user->id)
+                ->where('is_read', false)
+                ->exists();
         }
 
         // HAPUS tanda komentar (//) di bawah ini jika ingin MEMAKSA dot muncul saat tes tampilan:
