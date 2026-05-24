@@ -30,7 +30,7 @@ class UmkmTerbrandingTableWidget extends BaseWidget
         return $table
             ->query(
                 Umkm::query()
-                    ->where('status', 'approved')
+                    ->whereIn('status', ['branded', 'terbranding_final'])
                     ->whereNotNull('stiker_tampak_depan')
                     ->whereNotNull('stiker_tampak_kanan')
                     ->whereNotNull('stiker_tampak_kiri')
@@ -64,10 +64,12 @@ class UmkmTerbrandingTableWidget extends BaseWidget
                     ->label('Area Branding')
                     ->suffix(' m2'),
 
-                Tables\Columns\BadgeColumn::make('status')
-                    ->colors([
-                        'success' => 'approved',
-                    ]),
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'branded', 'terbranding_final' => 'success',
+                        default => 'gray',
+                    }),
 
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Tanggal Selesai')
