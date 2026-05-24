@@ -4,14 +4,78 @@ namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class UmkmExport implements FromCollection, WithHeadings
+class UmkmExport implements FromCollection, WithHeadings, WithColumnWidths, WithStyles
 {
     protected $records;
 
     public function __construct($records)
     {
         $this->records = $records;
+    }
+
+    public function styles(Worksheet $sheet)
+    {
+        $lastRow = $sheet->getHighestRow();
+        $lastCol = $sheet->getHighestColumn();
+
+        // Header bold + background
+        $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => 'F59E0B']],
+        ]);
+
+        // Text wrap untuk semua cell
+        $sheet->getStyle("A1:{$lastCol}{$lastRow}")->getAlignment()->setWrapText(true);
+        $sheet->getStyle("A1:{$lastCol}{$lastRow}")->getAlignment()->setVertical('top');
+
+        return [];
+    }
+
+    public function columnWidths(): array
+    {
+        return [
+            'A' => 20, // Nama Usaha
+            'B' => 18, // Nama Pemilik
+            'C' => 30, // Alamat
+            'D' => 15, // No WA
+            'E' => 10, // Radius
+            'F' => 10, // Jam Buka
+            'G' => 10, // Jam Tutup
+            'H' => 25, // Request Text
+            'I' => 25, // Catatan
+            'J' => 18, // No Rekening
+            'K' => 12, // Nama Bank
+            'L' => 18, // Atas Nama
+            'M' => 14, // Lat
+            'N' => 14, // Lng
+            'O' => 35, // Sharelock URL
+            'P' => 10, 'Q' => 10, 'R' => 12,
+            'S' => 10, 'T' => 10, 'U' => 12,
+            'V' => 10, 'W' => 10, 'X' => 12,
+            'Y' => 10, 'Z' => 10, 'AA' => 12,
+            'AB' => 10, 'AC' => 10, 'AD' => 12,
+            'AE' => 10, 'AF' => 10, 'AG' => 12,
+            'AH' => 14, // Total Area
+            'AI' => 12, // Kriteria
+            'AJ' => 18, // Status
+            'AK' => 30, // Alasan Reject
+            'AL' => 18, // Tgl Approve
+            'AM' => 18, // Approved By
+            'AN' => 35, 'AO' => 35, 'AP' => 35, 'AQ' => 35, 'AR' => 35, 'AS' => 35, // Foto/Video URLs
+            'AT' => 14, // Kota
+            'AU' => 18, // PIC
+            'AV' => 18, // Tgl Submit
+            'AW' => 18, // Updated
+            'AX' => 35, 'AY' => 35, 'AZ' => 35, 'BA' => 35, // Design URLs
+            'BB' => 18, // Nama Desainer
+            'BC' => 35, 'BD' => 35, 'BE' => 35, 'BF' => 35, // Stiker URLs
+            'BG' => 14, // Tgl Pasang
+            'BH' => 18, // Team Pasang
+        ];
     }
 
     private function fileUrl(?string $path): string
@@ -24,10 +88,10 @@ class UmkmExport implements FromCollection, WithHeadings
     {
         return collect($this->records)->map(function ($item) {
             return [
-                $item->nama_usaha,
-                $item->nama_pemilik,
-                $item->alamat_usaha,
-                $item->no_wa,
+                $item->nama_usaha ?? '-',
+                $item->nama_pemilik ?? '-',
+                $item->alamat_usaha ?? '-',
+                $item->no_wa ?? '-',
                 $item->radius ?? '-',
                 $item->jam_buka ?? '-',
                 $item->jam_tutup ?? '-',
@@ -165,10 +229,10 @@ class UmkmExport implements FromCollection, WithHeadings
             'Tanggal Submit',
             'Terakhir Update',
 
-            'Design Final',
-            'Design Gerobak Depan',
-            'Design Gerobak Kiri',
-            'Design Gerobak Kanan',
+            'Design Final (FA)',
+            'Mockup Gerobak Depan',
+            'Mockup Gerobak Kiri',
+            'Mockup Gerobak Kanan',
             'Nama Desainer',
 
             'Stiker Tampak Depan',
