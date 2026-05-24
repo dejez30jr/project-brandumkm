@@ -298,11 +298,11 @@ class SummaryStatsWidget extends BaseWidget
                 ->url($getFilter(''))
                 ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #4f46e5;']));
 
-            $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">UMKM Approved</span>'), (clone $query)->where('status', 'approved')->count())
-                ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Menunggu didesain</span>'))
+            $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">UMKM Approved</span>'), (clone $query)->whereNotIn('status', ['pending', 'rejected'])->count())
+                ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Sudah disetujui client</span>'))
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success')
-                ->url($getFilter('approved'))
+                ->url($getFilter('approved_all'))
                 ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #16a34a;']));
 
             if ($userRole !== 'pic_lapangan') {
