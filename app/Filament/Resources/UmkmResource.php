@@ -890,53 +890,6 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
         !empty($record->design_gerobak_kanan)
     ), // section hanya muncul kalau ada minimal 1 gambar
 
-    // TOMBOL AKSI — wajib di bottom per PRD
-    \Filament\Infolists\Components\Section::make('Tindakan')
-        ->schema([
-            \Filament\Infolists\Components\Actions::make([
-                \Filament\Infolists\Components\Actions\Action::make('approve_umkm')
-                    ->label('Approve UMKM')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->modalHeading('Approve UMKM ini?')
-                    ->visible(fn (Umkm $record) =>
-                        $record->status === 'pending' && auth()->user()->isClient()
-                    )
-                    ->action(function (Umkm $record) {
-                        $record->update([
-                            'status' => 'approved',
-                            'approved_at' => now(),
-                            'approved_by' => auth()->id(),
-                        ]);
-                        \Filament\Notifications\Notification::make()->title('UMKM Disetujui ✅')->success()->send();
-                    }),
-
-                \Filament\Infolists\Components\Actions\Action::make('reject_umkm')
-                    ->label('Reject UMKM')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->form([
-                        \Filament\Forms\Components\Textarea::make('alasan_reject')
-                            ->label('Alasan Reject')
-                            ->required(),
-                    ])
-                    ->visible(fn (Umkm $record) =>
-                        $record->status === 'pending' && auth()->user()->isClient()
-                    )
-                    ->action(function (Umkm $record, array $data) {
-                        $record->update([
-                            'status' => 'rejected',
-                            'alasan_reject' => $data['alasan_reject'],
-                        ]);
-                        \Filament\Notifications\Notification::make()->title('UMKM Ditolak ❌')->danger()->send();
-                    }),
-            ])->columnSpanFull(),
-        ])
-        ->visible(fn (Umkm $record) =>
-            $record->status === 'pending' && auth()->user()->isClient()
-        ),
-
     ])
     ->modalWidth('7xl'),
               Tables\Actions\EditAction::make()
