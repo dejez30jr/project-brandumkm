@@ -14,7 +14,7 @@ use Illuminate\Support\HtmlString;
 class SummaryStatsWidget extends BaseWidget
 {
     protected static ?int $sort = 1;
-    protected static ?string $pollingInterval = null;
+    protected static ?string $pollingInterval = '30s';
 
     protected array|int|string $columns = [
         'default' => 2,
@@ -117,21 +117,65 @@ class SummaryStatsWidget extends BaseWidget
                 ]));
         }
 
-        if (in_array($userRole, ['client'])) {
-            $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Design Perlu Review</span>'), $designCounts?->pending_all ?? 0)
-                ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Menunggu review</span>'))
-                ->descriptionIcon('heroicon-m-clock')
-                ->color('warning')
-                ->url(UmkmDesignResource::getUrl('index', [
-                    'tableFilters' => [
-                        'status' => ['value' => 'pending'],
-                    ],
-                ]))
-                ->extraAttributes(array_merge($extraHtmlStyles, [
-                    'style' => $baseStyle . ' background-color: #ea580c;',
-                    'onmouseover' => "this.style.transform='translateY(-4px)'; this.style.filter='brightness(1.15)';",
-                    'onmouseout' => "this.style.transform='translateY(0)'; this.style.filter='brightness(1)';"
-                ]));
+        if (in_array($userRole, ['admin', 'client'])) {
+            $totalMasuk    = Umkm::count();
+            $totalReject   = Umkm::where('status', 'rejected')->count();
+            $totalApproved = Umkm::whereIn('status', ['approved', 'menunggu_didesain'])->count();
+            $totalPerluDesain = Umkm::where('status', 'menunggu_didesain')->count();
+            $totalRevisi   = UmkmDesign::where('status', 'revision_needed')->count();
+            $totalSiapLanjut = UmkmDesign::whereIn('status', ['approved', 'revised'])->count();
+            $totalFinal    = Umkm::whereIn('status', ['branded', 'terbranding_final'])->count();
+
+            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Total UMKM Diajukan</span>'), $totalMasuk)
+                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Semua pengajuan masuk</span>'))
+                ->descriptionIcon('heroicon-m-building-storefront')->color('primary')
+                ->url(UmkmResource::getUrl('index'))
+                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #4f46e5;',
+                    'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
+
+            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Total UMKM Di-reject</span>'), $totalReject)
+                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Ditolak client</span>'))
+                ->descriptionIcon('heroicon-m-x-circle')->color('danger')
+                ->url(UmkmResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'rejected']]]))
+                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #be123c;',
+                    'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
+
+            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Total UMKM Di-approve</span>'), $totalApproved)
+                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Disetujui client</span>'))
+                ->descriptionIcon('heroicon-m-check-circle')->color('success')
+                ->url(UmkmResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'approved']]]))
+                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #16a34a;',
+                    'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
+
+            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Perlu Di-desain</span>'), $totalPerluDesain)
+                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Menunggu antrean desainer</span>'))
+                ->descriptionIcon('heroicon-m-paint-brush')->color('warning')
+                ->url(UmkmDesignResource::getUrl('index'))
+                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #d97706;',
+                    'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
+
+            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Total Revisi Desain</span>'), $totalRevisi)
+                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Desain diminta revisi</span>'))
+                ->descriptionIcon('heroicon-m-arrow-path-rounded-square')->color('danger')
+                ->url(UmkmDesignResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'revision_needed']]]))
+                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #ef4444;',
+                    'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
+
+            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Sudah Didesain & Direvisi</span>'), $totalSiapLanjut)
+                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Siap tahap selanjutnya</span>'))
+                ->descriptionIcon('heroicon-m-check-badge')->color('info')
+                ->url(UmkmDesignResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'approved']]]))
+                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #0891b2;',
+                    'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
+
+            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">UMKM Terbranding Final</span>'), $totalFinal)
+                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Workflow selesai</span>'))
+                ->descriptionIcon('heroicon-m-trophy')->color('success')
+                ->url(UmkmTerbrandingResource::getUrl('index'))
+                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #047857;',
+                    'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
+
+            return $stats;
         }
 
         if (in_array($userRole, ['design', 'admin'])) {
