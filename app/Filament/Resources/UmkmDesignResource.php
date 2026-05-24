@@ -427,24 +427,17 @@ class UmkmDesignResource extends Resource
                                     in_array($record->status, ['pending', 'revised']) &&
                                     auth()->user()->isClient()
                                 )
-                                ->action(function (UmkmDesign $record, array $arguments) {
+                                ->action(function (UmkmDesign $record) {
+                                    $catatan = request()->input('catatan_revisi', 'Perlu revisi oleh client');
                                     $record->update([
                                         'status' => 'revision_needed',
-                                        'catatan_revisi' => $arguments['reason'] ?? 'Perlu revisi',
+                                        'catatan_revisi' => $catatan,
                                     ]);
                                     if ($record->umkm) {
                                         $record->umkm->update(['status' => Umkm::STATUS_REVISION_NEEDED]);
                                     }
                                     \Filament\Notifications\Notification::make()->title('Revisi Diminta')->warning()->send();
-                                })
-                                ->extraAttributes([
-                                    'x-on:click.prevent' => "
-                                        let reason = prompt('Masukkan catatan revisi (wajib):');
-                                        if (reason && reason.trim() !== '') {
-                                            \$wire.mountInfolistAction('revisi_design', { reason: reason });
-                                        }
-                                    ",
-                                ]),
+                                }),
                         ])->columnSpanFull(),
                     ])
                     ->visible(fn (UmkmDesign $record) =>

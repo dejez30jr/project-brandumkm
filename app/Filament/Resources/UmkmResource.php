@@ -944,21 +944,14 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
                     ->label('Reject UMKM')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->action(function (Umkm $record, array $arguments) {
+                    ->action(function (Umkm $record) {
+                        $alasan = request()->input('alasan_reject', 'Ditolak oleh client');
                         $record->update([
                             'status' => 'rejected',
-                            'alasan_reject' => $arguments['reason'] ?? 'Ditolak oleh client',
+                            'alasan_reject' => $alasan,
                         ]);
                         \Filament\Notifications\Notification::make()->title('UMKM Ditolak ❌')->danger()->send();
-                    })
-                    ->extraAttributes([
-                        'x-on:click.prevent' => "
-                            let reason = prompt('Masukkan alasan reject (wajib):');
-                            if (reason && reason.trim() !== '') {
-                                \$wire.mountInfolistAction('reject_umkm', { reason: reason });
-                            }
-                        ",
-                    ]),
+                    }),
             ])->columnSpanFull(),
         ])
         ->visible(fn (Umkm $record) =>
