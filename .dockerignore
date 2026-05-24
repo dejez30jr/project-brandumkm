@@ -1,6 +1,7 @@
 .git
 node_modules
 vendor
+bootstrap/cache
 storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*
@@ -10,4 +11,3 @@ PHASES
 WORKPLAN.md
 _ide_helper.php
 _ide_helper_models.php
-.env
