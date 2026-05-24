@@ -7,98 +7,101 @@ use App\Models\Notifikasi;
 use App\Models\Umkm;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class UmkmObserverTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function clearNotifikasi(): void
+    private function setup5Roles(): array
     {
-        DB::table('notifikasi_user')->delete();
-        Notifikasi::query()->delete();
+        User::query()->delete();
+        $kota = Kota::create(['nama' => 'Kota ' . uniqid()]);
+        return [
+            'kota'      => $kota,
+            'admin'     => User::factory()->create(['role' => 'admin']),
+            'client'    => User::factory()->create(['role' => 'client']),
+            'pic'       => User::factory()->create(['role' => 'pic_lapangan', 'kota_id' => $kota->id]),
+            'designer'  => User::factory()->create(['role' => 'design']),
+            'pasang'    => User::factory()->create(['role' => 'team_pasang']),
+        ];
     }
 
-    private function createUmkmWithObserver(array $overrides = []): Umkm
+    private function makeUmkm(array $roles, array $overrides = []): Umkm
     {
-        $kota = Kota::create(['nama' => 'Kota Obs ' . uniqid()]);
-        $pic = User::factory()->create(['role' => 'pic_lapangan', 'kota_id' => $kota->id]);
-
         return Umkm::create(array_merge([
-            'nama_pemilik' => 'Owner',
-            'nama_usaha' => 'Usaha Test',
-            'alamat_usaha' => 'Jl. Test',
-            'no_wa' => '081234',
-            'kota_id' => $kota->id,
-            'submitted_by' => $pic->id,
+            'nama_pemilik' => 'Owner', 'nama_usaha' => 'Usaha',
+            'alamat_usaha' => 'Jl. Test', 'no_wa' => '08' . rand(100000000, 999999999),
+            'kota_id' => $roles['kota']->id, 'submitted_by' => $roles['pic']->id,
             'status' => 'pending',
         ], $overrides));
     }
 
-    public function test_created_sends_notification_to_admin_and_client(): void
+    // PRD §5.4: PIC submit → client + admin dapat notif umkm_baru
+    public function test_created_notifies_client_and_admin(): void
     {
-        // Clear any pre-existing users with admin/client roles
-        User::whereIn('role', ['admin', 'client'])->delete();
+        $r = $this->setup5Roles();
+        Notifikasi::query()->delete();
 
-        $admin = User::factory()->create(['role' => 'admin']);
-        $client = User::factory()->create(['role' => 'client']);
-        User::factory()->create(['role' => 'design']); // should NOT receive
+        $umkm = $this->makeUmkm($r);
 
-        $this->clearNotifikasi();
-
-        $umkm = $this->createUmkmWithObserver();
-
-        $notifs = Notifikasi::where('notifiable_type', Umkm::class)
-            ->where('notifiable_id', $umkm->id)
-            ->where('tipe', 'umkm_baru')
-            ->get();
-
-        $this->assertCount(2, $notifs);
-        $recipientIds = $notifs->pluck('user_id')->toArray();
-        $this->assertContains($admin->id, $recipientIds);
-        $this->assertContains($client->id, $recipientIds);
+        $this->assertDatabaseHas('notifikasis', ['user_id' => $r['client']->id, 'tipe' => 'umkm_baru']);
+        $this->assertDatabaseHas('notifikasis', ['user_id' => $r['admin']->id, 'tipe' => 'umkm_baru']);
+        $this->assertDatabaseMissing('notifikasis', ['user_id' => $r['pic']->id, 'tipe' => 'umkm_baru']);
+        $this->assertDatabaseMissing('notifikasis', ['user_id' => $r['designer']->id, 'tipe' => 'umkm_baru']);
     }
 
-    public function test_updated_approved_sends_notification_to_designers_and_submitter(): void
+    // PRD §4: approved → otomatis berubah ke menunggu_didesain
+    public function test_approved_auto_transitions_to_menunggu_didesain(): void
     {
-        User::whereIn('role', ['admin', 'client', 'design'])->delete();
+        $r = $this->setup5Roles();
+        $umkm = $this->makeUmkm($r);
 
-        $designer = User::factory()->create(['role' => 'design']);
+        $umkm->update(['status' => 'approved']);
+        $umkm->refresh();
 
-        $umkm = $this->createUmkmWithObserver();
-        $submitterId = $umkm->submitted_by;
-
-        $this->clearNotifikasi();
-
-        $umkm->status = 'approved';
-        $umkm->save();
-
-        $notifs = Notifikasi::all();
-
-        // 1 for designer + 1 for submitter
-        $this->assertCount(2, $notifs);
-        $recipientIds = $notifs->pluck('user_id')->toArray();
-        $this->assertContains($designer->id, $recipientIds);
-        $this->assertContains($submitterId, $recipientIds);
+        $this->assertEquals(Umkm::STATUS_MENUNGGU_DIDESAIN, $umkm->status);
     }
 
-    public function test_updated_rejected_sends_notification_to_submitter(): void
+    // PRD §5.4: approved → designer + PIC + admin dapat notif
+    public function test_approved_notifies_designer_pic_and_admin(): void
     {
-        User::whereIn('role', ['admin', 'client'])->delete();
+        $r = $this->setup5Roles();
+        $umkm = $this->makeUmkm($r);
+        Notifikasi::query()->delete();
 
-        $umkm = $this->createUmkmWithObserver();
-        $submitterId = $umkm->submitted_by;
+        $umkm->update(['status' => 'approved']);
 
-        $this->clearNotifikasi();
+        $this->assertDatabaseHas('notifikasis', ['user_id' => $r['designer']->id, 'tipe' => 'perlu_design']);
+        $this->assertDatabaseHas('notifikasis', ['user_id' => $r['pic']->id, 'tipe' => 'umkm_approved']);
+        $this->assertDatabaseHas('notifikasis', ['user_id' => $r['admin']->id, 'tipe' => 'umkm_approved']);
+    }
 
-        $umkm->status = 'rejected';
-        $umkm->alasan_reject = 'Tidak memenuhi syarat';
-        $umkm->save();
+    // PRD §5.4: rejected → PIC + admin dapat notif
+    public function test_rejected_notifies_pic_and_admin(): void
+    {
+        $r = $this->setup5Roles();
+        $umkm = $this->makeUmkm($r);
+        Notifikasi::query()->delete();
 
-        $notifs = Notifikasi::all();
-        $this->assertCount(1, $notifs);
-        $this->assertEquals($submitterId, $notifs->first()->user_id);
-        $this->assertEquals('umkm_rejected', $notifs->first()->tipe);
+        $umkm->update(['status' => 'rejected', 'alasan_reject' => 'Terlalu jauh']);
+
+        $this->assertDatabaseHas('notifikasis', ['user_id' => $r['pic']->id, 'tipe' => 'umkm_rejected']);
+        $this->assertDatabaseHas('notifikasis', ['user_id' => $r['admin']->id, 'tipe' => 'umkm_rejected']);
+        $this->assertDatabaseMissing('notifikasis', ['user_id' => $r['client']->id, 'tipe' => 'umkm_rejected']);
+    }
+
+    // PRD §3.1: alasan reject tampil di notifikasi PIC
+    public function test_rejected_notification_contains_reason(): void
+    {
+        $r = $this->setup5Roles();
+        $umkm = $this->makeUmkm($r);
+        Notifikasi::query()->delete();
+
+        $umkm->update(['status' => 'rejected', 'alasan_reject' => 'Lokasi tidak strategis']);
+
+        $notif = Notifikasi::where('user_id', $r['pic']->id)->where('tipe', 'umkm_rejected')->first();
+        $this->assertNotNull($notif);
+        $this->assertStringContainsString('Lokasi tidak strategis', $notif->pesan);
     }
 }
