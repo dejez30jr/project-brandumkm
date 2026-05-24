@@ -1038,7 +1038,7 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
                 ->send();
         }),
 
-])->fullWidth(),
+])
     ])
     ->modalWidth('7xl'),
               Tables\Actions\EditAction::make()

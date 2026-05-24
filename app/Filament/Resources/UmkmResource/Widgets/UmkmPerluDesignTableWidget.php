@@ -215,6 +215,7 @@ class UmkmPerluDesignTableWidget extends BaseWidget
                     \Filament\Infolists\Components\ImageEntry::make( 'foto_depan' )
                     ->label( 'Foto Depan' )
                     ->height( 200 )
+                       ->getStateUsing(fn ($record) => asset('storage/' . $record->foto_depan))
                     ->extraAttributes(fn ($record) => [
                         'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
                         'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_depan) . '" })',
@@ -223,6 +224,7 @@ class UmkmPerluDesignTableWidget extends BaseWidget
                     \Filament\Infolists\Components\ImageEntry::make( 'foto_kanan' )
                     ->label( 'Foto Kanan' )
                     ->height( 200 )
+                       ->getStateUsing(fn ($record) => asset('storage/' . $record->foto_kanan))
                     ->extraAttributes(fn ($record) => [
                         'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
                         'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_kanan) . '" })',
@@ -231,6 +233,7 @@ class UmkmPerluDesignTableWidget extends BaseWidget
                     \Filament\Infolists\Components\ImageEntry::make( 'foto_kiri' )
                     ->label( 'Foto Kiri' )
                     ->height( 200 )
+                       ->getStateUsing(fn ($record) => asset('storage/' . $record->foto_kiri))
                     ->extraAttributes(fn ($record) => [
                         'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
                         'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_kiri) . '" })',
@@ -238,6 +241,7 @@ class UmkmPerluDesignTableWidget extends BaseWidget
                     \Filament\Infolists\Components\ImageEntry::make( 'foto_plang_alfamart' )
                     ->label( 'Foto Plang Alfamart' )
                     ->height( 200 )
+                       ->getStateUsing(fn ($record) => asset('storage/' . $record->foto_plang_alfamart))
                     ->extraAttributes(fn ($record) => [
                         'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
                         'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_kiri) . '" })',
