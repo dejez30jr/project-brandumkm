@@ -162,21 +162,31 @@ class Umkm extends Model
     const STATUS_PENDING = 'pending';
     const STATUS_APPROVED = 'approved';
     const STATUS_REJECTED = 'rejected';
+    const STATUS_MENUNGGU_DIDESAIN = 'menunggu_didesain';
     const STATUS_DESIGNING = 'designing';
     const STATUS_DESIGN_REVIEW = 'design_review';
     const STATUS_DESIGN_APPROVED = 'design_approved';
+    const STATUS_WAITING_INSTALLATION = 'waiting_installation';
     const STATUS_REVISION_NEEDED = 'revision_needed';
+    const STATUS_REVISION = 'revision';
+    const STATUS_INSTALLATION_COMPLETED = 'installation_completed';
     const STATUS_BRANDED = 'branded';
+    const STATUS_TERBRANDING_FINAL = 'terbranding_final';
 
     const STATUSES = [
         self::STATUS_PENDING,
         self::STATUS_APPROVED,
         self::STATUS_REJECTED,
+        self::STATUS_MENUNGGU_DIDESAIN,
         self::STATUS_DESIGNING,
         self::STATUS_DESIGN_REVIEW,
         self::STATUS_DESIGN_APPROVED,
+        self::STATUS_WAITING_INSTALLATION,
         self::STATUS_REVISION_NEEDED,
+        self::STATUS_REVISION,
+        self::STATUS_INSTALLATION_COMPLETED,
         self::STATUS_BRANDED,
+        self::STATUS_TERBRANDING_FINAL,
     ];
 
     protected $fillable = [
@@ -244,6 +254,8 @@ class Umkm extends Model
         'stiker_tampak_kanan',
         'stiker_tampak_kiri',
         'foto_wide',
+        'tanggal_pasang',
+        'nama_team_pasang',
     ];
 
     protected $casts = [
