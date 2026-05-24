@@ -25,6 +25,10 @@ class UmkmExport implements FromCollection, WithHeadings
                 'Alamat Usaha' => $item->alamat_usaha,
                 'No WA' => $item->no_wa,
                 'Radius' => $item->radius,
+                'Jam Buka' => $item->jam_buka,
+                'Jam Tutup' => $item->jam_tutup,
+                'Request Teks Branding' => $item->request_text,
+                'Catatan' => $item->catatan,
 
                 'No Rekening' => $item->no_rekening,
                 'Nama Bank' => $item->nama_bank,
@@ -106,8 +110,10 @@ class UmkmExport implements FromCollection, WithHeadings
                 'Stiker Tampak Depan' => $item->stiker_tampak_depan,
                 'Stiker Tampak Kanan' => $item->stiker_tampak_kanan,
                 'Stiker Tampak Kiri' => $item->stiker_tampak_kiri,
-
                 'Foto Wide' => $item->foto_wide,
+                'Tanggal Pasang' => $item->tanggal_pasang,
+                'Nama Team Pasang' => $item->nama_team_pasang,
+                'Nama Desainer' => $item->umkmDesign?->nama_desainer ?? '-',
             ];
         });
     }
@@ -121,6 +127,10 @@ class UmkmExport implements FromCollection, WithHeadings
             'Alamat Usaha',
             'No WA',
             'Radius',
+            'Jam Buka',
+            'Jam Tutup',
+            'Request Teks Branding',
+            'Catatan',
 
             'No Rekening',
             'Nama Bank',
@@ -202,8 +212,10 @@ class UmkmExport implements FromCollection, WithHeadings
             'Stiker Tampak Depan',
             'Stiker Tampak Kanan',
             'Stiker Tampak Kiri',
-
             'Foto Wide',
+            'Tanggal Pasang',
+            'Nama Team Pasang',
+            'Nama Desainer',
         ];
     }
 }
