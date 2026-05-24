@@ -11,6 +11,11 @@ class CreateUmkmDesign extends CreateRecord
 {
     protected static string $resource = UmkmDesignResource::class;
 
+    public static function canCreateAnother(): bool
+    {
+        return false;
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         // Jika UMKM sudah punya design dengan status revision_needed, arahkan ke edit
