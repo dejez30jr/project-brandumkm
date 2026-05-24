@@ -15,14 +15,29 @@
 - **Server:** Nginx + PHP-FPM (via Docker)
 - **Frontend Mobile:** WebView APK (WebIntoApp)
 
-## Akun Default
+## Akun Default (Production)
+
+Seeder: `AdminSeeder`
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | admin@brandumkm.com | password |
-| Client | client@brandumkm.com | password |
+| admin | admin@brandumkm.com | password |
+| client | client@brandumkm.com | password |
 
-Untuk testing lengkap semua role, jalankan:
+## Akun Testing (Semua Role)
+
+Seeder: `TestSeeder`
+
+| Role | Email | Password |
+|------|-------|----------|
+| admin | admin@test.com | password |
+| client | client@test.com | password |
+| pic_lapangan | pic.jogja@test.com | password |
+| pic_lapangan | pic.bandung@test.com | password |
+| design | design@test.com | password |
+| team_pasang | pasang@test.com | password |
+
+Untuk menjalankan TestSeeder:
 ```bash
 php artisan db:seed --class=TestSeeder
 ```
