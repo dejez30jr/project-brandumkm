@@ -24,6 +24,11 @@ class UmkmStikerResource extends Resource
         return in_array(auth()->user()?->role, ['team_pasang']);
     }
 
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
