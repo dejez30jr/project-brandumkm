@@ -210,8 +210,6 @@ class UmkmDesignResource extends Resource
                     ->label('Kota')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\ImageColumn::make('file_path')
-                    ->label('Preview'),
                 Tables\Columns\TextColumn::make('versi')
                     ->label('Versi')
                     ->badge(),
@@ -366,6 +364,7 @@ class UmkmDesignResource extends Resource
                         \Filament\Infolists\Components\ImageEntry::make('file_path')
                             ->label('File Design Final')
                             ->height(200)
+                            ->getStateUsing(fn ($record) => asset('storage/' . $record->file_path))
                             ->extraAttributes(fn ($record) => [
                                 'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700',
                                 'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->file_path) . '" })',
@@ -374,6 +373,7 @@ class UmkmDesignResource extends Resource
                         \Filament\Infolists\Components\ImageEntry::make('gerobak_depan')
                             ->label('Mockup Gerobak Depan')
                             ->height(200)
+                            ->getStateUsing(fn ($record) => asset('storage/' . $record->gerobak_depan))
                             ->extraAttributes(fn ($record) => [
                                 'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700',
                                 'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->gerobak_depan) . '" })',
@@ -382,6 +382,7 @@ class UmkmDesignResource extends Resource
                         \Filament\Infolists\Components\ImageEntry::make('gerobak_kiri')
                             ->label('Mockup Gerobak Kiri')
                             ->height(200)
+                            ->getStateUsing(fn ($record) => asset('storage/' . $record->gerobak_kiri))
                             ->extraAttributes(fn ($record) => [
                                 'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700',
                                 'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->gerobak_kiri) . '" })',
@@ -390,6 +391,7 @@ class UmkmDesignResource extends Resource
                         \Filament\Infolists\Components\ImageEntry::make('gerobak_kanan')
                             ->label('Mockup Gerobak Kanan')
                             ->height(200)
+                            ->getStateUsing(fn ($record) => asset('storage/' . $record->gerobak_kanan))
                             ->extraAttributes(fn ($record) => [
                                 'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700',
                                 'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->gerobak_kanan) . '" })',

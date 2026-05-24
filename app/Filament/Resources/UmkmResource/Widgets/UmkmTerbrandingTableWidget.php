@@ -187,6 +187,7 @@ class UmkmTerbrandingTableWidget extends BaseWidget
         \Filament\Infolists\Components\ImageEntry::make('foto_depan')
             ->label('Foto Depan')
             ->height(200)
+            ->getStateUsing(fn ($record) => asset('storage/' . $record->foto_depan))
             ->extraAttributes(fn ($record) => [
                 'class' => 'cursor-pointer hover:scale-105 transition duration-300',
                 'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_depan) . '" })',
@@ -195,6 +196,7 @@ class UmkmTerbrandingTableWidget extends BaseWidget
         \Filament\Infolists\Components\ImageEntry::make('foto_kanan')
             ->label('Foto Kanan')
             ->height(200)
+            ->getStateUsing(fn ($record) => asset('storage/' . $record->foto_kanan))
             ->extraAttributes(fn ($record) => [
                 'class' => 'cursor-pointer hover:scale-105 transition duration-300',
                 'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_kanan) . '" })',
@@ -203,6 +205,7 @@ class UmkmTerbrandingTableWidget extends BaseWidget
         \Filament\Infolists\Components\ImageEntry::make('foto_kiri')
             ->label('Foto Kiri')
             ->height(200)
+            ->getStateUsing(fn ($record) => asset('storage/' . $record->foto_kiri))
             ->extraAttributes(fn ($record) => [
                 'class' => 'cursor-pointer hover:scale-105 transition duration-300',
                 'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_kiri) . '" })',
@@ -211,6 +214,7 @@ class UmkmTerbrandingTableWidget extends BaseWidget
         \Filament\Infolists\Components\ImageEntry::make('foto_plang_alfamart')
             ->label('Foto jarak dekat plang Alfamart')
             ->height(200)
+            ->getStateUsing(fn ($record) => asset('storage/' . $record->foto_plang_alfamart))
             ->extraAttributes(fn ($record) => [
                 'class' => 'cursor-pointer hover:scale-105 transition duration-300',
                 'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_plang_alfamart) . '" })',
@@ -232,6 +236,7 @@ class UmkmTerbrandingTableWidget extends BaseWidget
                     \Filament\Infolists\Components\ImageEntry::make('design_final')
                     ->label('Design Final')
                     ->height(220)
+                    ->getStateUsing(fn ($record) => asset('storage/' . $record->design_final))
                     ->columnSpanFull() 
                     ->extraAttributes(fn ($record) => [
                         'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
@@ -242,6 +247,7 @@ class UmkmTerbrandingTableWidget extends BaseWidget
                     \Filament\Infolists\Components\ImageEntry::make('design_gerobak_depan')
                     ->label('Gerobak Tampak Depan')
                     ->height(200)
+                    ->getStateUsing(fn ($record) => asset('storage/' . $record->design_gerobak_depan))
                     ->extraAttributes(fn ($record) => [
                         'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
                         'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_gerobak_depan) . '" })',
@@ -251,6 +257,7 @@ class UmkmTerbrandingTableWidget extends BaseWidget
                     \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kiri')
                     ->label('Gerobak Tampak Kiri')
                     ->height(200)
+                    ->getStateUsing(fn ($record) => asset('storage/' . $record->design_gerobak_kiri))
                     ->extraAttributes(fn ($record) => [
                         'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
                         'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_gerobak_kiri) . '" })',
@@ -260,6 +267,7 @@ class UmkmTerbrandingTableWidget extends BaseWidget
                     \Filament\Infolists\Components\ImageEntry::make('design_gerobak_kanan')
                     ->label('Gerobak Tampak Kanan')
                     ->height(200)
+                    ->getStateUsing(fn ($record) => asset('storage/' . $record->design_gerobak_kanan))
                     ->extraAttributes(fn ($record) => [
                         'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
                         'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->design_gerobak_kanan) . '" })',
@@ -293,6 +301,7 @@ class UmkmTerbrandingTableWidget extends BaseWidget
                     \Filament\Infolists\Components\ImageEntry::make('stiker_tampak_depan')
                         ->label('Stiker Tampak Depan')
                         ->height(200)
+                        ->getStateUsing(fn ($record) => asset('storage/' . $record->stiker_tampak_depan))
                         ->extraAttributes(fn ($record) => [
                             'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
                             'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->stiker_tampak_depan) . '" })',
@@ -300,6 +309,7 @@ class UmkmTerbrandingTableWidget extends BaseWidget
                     \Filament\Infolists\Components\ImageEntry::make('stiker_tampak_kanan')
                         ->label('Stiker Tampak Kanan')
                         ->height(200)
+                        ->getStateUsing(fn ($record) => asset('storage/' . $record->stiker_tampak_kanan))
                         ->extraAttributes(fn ($record) => [
                             'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
                             'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->stiker_tampak_kanan) . '" })',
@@ -307,6 +317,7 @@ class UmkmTerbrandingTableWidget extends BaseWidget
                     \Filament\Infolists\Components\ImageEntry::make('stiker_tampak_kiri')
                         ->label('Stiker Tampak Kiri')   
                         ->height(200)
+                        ->getStateUsing(fn ($record) => asset('storage/' . $record->stiker_tampak_kiri))
                         ->extraAttributes(fn ($record) => [
                             'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg overflow-hidden',
                             'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->stiker_tampak_kiri) . '" })',
@@ -314,6 +325,7 @@ class UmkmTerbrandingTableWidget extends BaseWidget
                     \Filament\Infolists\Components\ImageEntry::make('foto_wide')
                         ->label('Foto Wide (Keseluruhan)')
                         ->height(200)
+                        ->getStateUsing(fn ($record) => asset('storage/' . $record->foto_wide))
                         ->extraAttributes(fn ($record) => [
                             'class' => 'cursor-pointer hover:scale-105 transition duration-300 rounded-lg   overflow-hidden',
                             'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_wide) . '" })',
