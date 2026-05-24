@@ -56,7 +56,7 @@ class SummaryStatsWidget extends BaseWidget
         }
 
         if (in_array($userRole, ['team_pasang'])) {
-            $queryPerluBranding = Umkm::where('status', Umkm::STATUS_DESIGN_APPROVED)
+            $queryPerluBranding = Umkm::where('status', Umkm::STATUS_WAITING_INSTALLATION)
                 ->where(function ($q) {
                     $q->whereNull('stiker_tampak_depan')
                       ->orWhereNull('stiker_tampak_kanan')
