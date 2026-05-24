@@ -341,6 +341,21 @@ class UmkmPerluDesignTableWidget extends BaseWidget
                     !empty($record->design_gerobak_kiri) ||
                     !empty($record->design_gerobak_kanan)
                 ),
+
+                // TOMBOL AKSI DI BOTTOM POPUP
+                \Filament\Infolists\Components\Section::make('Tindakan')
+                    ->schema([
+                        \Filament\Infolists\Components\Actions::make([
+                            \Filament\Infolists\Components\Actions\Action::make('design_sekarang')
+                                ->label(fn (Umkm $record) => $record->umkmDesign?->status === 'revision_needed' ? 'Revisi Sekarang' : 'Design Sekarang')
+                                ->icon('heroicon-o-paint-brush')
+                                ->color('warning')
+                                ->url(fn (Umkm $record) => $record->umkmDesign?->status === 'revision_needed'
+                                    ? '/admin/umkm-designs/' . $record->umkmDesign->id . '/edit?umkm=' . $record->id
+                                    : '/admin/umkm-designs/create?umkm=' . $record->id
+                                ),
+                        ])->columnSpanFull(),
+                    ]),
             ] ),
         ] )
 
