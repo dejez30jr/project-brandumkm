@@ -121,6 +121,7 @@ class UmkmTerbrandingResource extends Resource
             ])
              ->actions([
         Tables\Actions\ViewAction::make()
+    ->label('Lihat Detail')
     ->slideOver() // optional biar full kanan
     ->infolist([
 
@@ -375,9 +376,7 @@ class UmkmTerbrandingResource extends Resource
                         ->default('-'),
                 ])->columns(2),
     ])
-    ->modalWidth('7xl')
-    // Section hanya muncul jika salah satu data tersedia
-    ->visible(fn ($record) => !empty($record->status_pasang) || !empty($record->updated_at)),
+    ->modalWidth('7xl'),
             ])
 ->headerActions([
     Action::make('exportExcel')
