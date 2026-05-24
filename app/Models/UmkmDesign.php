@@ -48,6 +48,7 @@ class UmkmDesign extends Model
     protected $fillable = [
         'umkm_id',
         'designer_id',
+        'nama_desainer',
         'file_path',
         'status',
         'catatan_revisi',
