@@ -89,13 +89,16 @@ class UserResource extends Resource {
             ->searchable(),
             Tables\Columns\TextColumn::make( 'email' )
             ->searchable(),
-            Tables\Columns\BadgeColumn::make( 'role' )
-            ->colors( [
-                'danger' => 'admin',
-                'warning' => 'client',
-                'success' => 'design',
-                'primary' => 'pic_lapangan',
-            ] ),
+            Tables\Columns\TextColumn::make('role')
+            ->badge()
+            ->color(fn (string $state): string => match ($state) {
+                'admin' => 'danger',
+                'client' => 'warning',
+                'design' => 'success',
+                'pic_lapangan' => 'primary',
+                'team_pasang' => 'info',
+                default => 'gray',
+            }),
             Tables\Columns\TextColumn::make( 'kota.nama' )
             ->label( 'Kota' ),
             Tables\Columns\IconColumn::make( 'is_active' )
@@ -112,6 +115,7 @@ class UserResource extends Resource {
                 'client' => 'Client',
                 'design' => 'Team Design',
                 'pic_lapangan' => 'PIC Lapangan',
+                'team_pasang' => 'Team Pasang',
             ] ),
             Tables\Filters\SelectFilter::make( 'kota_id' )
             ->label( 'Kota' )
