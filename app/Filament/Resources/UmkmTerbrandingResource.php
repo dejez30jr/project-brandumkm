@@ -21,9 +21,9 @@ class UmkmTerbrandingResource extends Resource
     // Tetap menggunakan Model Umkm karena datanya menyatu di sana
     protected static ?string $model = Umkm::class;
 
-    protected static ?string $navigationLabel = 'UMKM Terbranding';
-        protected static ?string $label = 'UMKM Terbranding';
-    protected static ?string $pluralLabel = 'UMKM Terbranding';
+    protected static ?string $navigationLabel = 'UMKM Branded';
+        protected static ?string $label = 'UMKM Branded';
+    protected static ?string $pluralLabel = 'UMKM Branded';
       protected static ?string $navigationGroup = 'Data UMKM';
     
     protected static ?string $slug = 'umkm-terbranding';
