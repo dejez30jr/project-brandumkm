@@ -119,12 +119,20 @@ class SummaryStatsWidget extends BaseWidget
 
         if (in_array($userRole, ['admin', 'client'])) {
             $totalMasuk    = Umkm::count();
+            $totalPending  = Umkm::where('status', 'pending')->count();
             $totalReject   = Umkm::where('status', 'rejected')->count();
             $totalApproved = Umkm::whereIn('status', ['approved', 'menunggu_didesain'])->count();
             $totalPerluDesain = Umkm::where('status', 'menunggu_didesain')->count();
             $totalRevisi   = UmkmDesign::where('status', 'revision_needed')->count();
             $totalSiapLanjut = UmkmDesign::whereIn('status', ['approved', 'revised'])->count();
             $totalFinal    = Umkm::whereIn('status', ['branded', 'terbranding_final'])->count();
+
+            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Perlu Di-review Client</span>'), $totalPending)
+                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Menunggu approval/reject</span>'))
+                ->descriptionIcon('heroicon-m-clock')->color('warning')
+                ->url(UmkmResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'pending']]]))
+                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #ea580c;',
+                    'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
 
             $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Total UMKM Diajukan</span>'), $totalMasuk)
                 ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Semua pengajuan masuk</span>'))
