@@ -13,60 +13,76 @@ class UmkmChartWidget extends ChartWidget
     protected int | string | array $columnSpan = 'full';
     protected static ?string $maxHeight = '400px';
 
-   public static function canView(): bool
-{
-    // Mengambil user yang sedang login
-    $user = auth()->user();
-
-    // Memastikan user ada dan role-nya adalah 'admin' atau 'client'
-    return $user && in_array($user->role, ['admin', 'client']);
-}
+    public static function canView(): bool
+    {
+        $user = auth()->user();
+        return $user && in_array($user->role, ['admin', 'client']);
+    }
 
     protected function getData(): array
     {
-        // Ambil semua kota yang memiliki UMKM
-        $kotas = Kota::whereHas('umkms')->get();
-        
+        $kotas = Kota::whereHas('umkms')->orderBy('nama')->get();
+
         $labels = [];
-        $approved = [];
         $pending = [];
+        $approved = [];
+        $proses_design = [];
+        $siap_pasang = [];
+        $terbranding = [];
         $rejected = [];
 
         foreach ($kotas as $kota) {
             $labels[] = $kota->nama;
-            
-            $approved[] = Umkm::where('kota_id', $kota->id)
-                ->where('status', 'approved')
-                ->count();
-            
-            $pending[] = Umkm::where('kota_id', $kota->id)
-                ->where('status', 'pending')
-                ->count();
-            
-            $rejected[] = Umkm::where('kota_id', $kota->id)
-                ->where('status', 'rejected')
-                ->count();
+
+            $counts = Umkm::where('kota_id', $kota->id)
+                ->selectRaw("
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                    SUM(CASE WHEN status IN ('approved', 'menunggu_didesain') THEN 1 ELSE 0 END) as approved,
+                    SUM(CASE WHEN status IN ('designing', 'design_review', 'revision_needed', 'revision') THEN 1 ELSE 0 END) as proses_design,
+                    SUM(CASE WHEN status IN ('design_approved', 'waiting_installation') THEN 1 ELSE 0 END) as siap_pasang,
+                    SUM(CASE WHEN status IN ('branded', 'terbranding_final', 'installation_completed') THEN 1 ELSE 0 END) as terbranding,
+                    SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
+                ")->first();
+
+            $pending[] = (int) $counts->pending;
+            $approved[] = (int) $counts->approved;
+            $proses_design[] = (int) $counts->proses_design;
+            $siap_pasang[] = (int) $counts->siap_pasang;
+            $terbranding[] = (int) $counts->terbranding;
+            $rejected[] = (int) $counts->rejected;
         }
 
         return [
             'datasets' => [
                 [
-                    'label' => 'Approved',
-                    'data' => $approved,
-                    'backgroundColor' => '#10B981',
-                    'borderColor' => '#10B981',
-                ],
-                [
                     'label' => 'Pending',
                     'data' => $pending,
                     'backgroundColor' => '#F59E0B',
-                    'borderColor' => '#F59E0B',
+                ],
+                [
+                    'label' => 'Approved',
+                    'data' => $approved,
+                    'backgroundColor' => '#3B82F6',
+                ],
+                [
+                    'label' => 'Proses Design',
+                    'data' => $proses_design,
+                    'backgroundColor' => '#8B5CF6',
+                ],
+                [
+                    'label' => 'Siap Pasang',
+                    'data' => $siap_pasang,
+                    'backgroundColor' => '#06B6D4',
+                ],
+                [
+                    'label' => 'Terbranding',
+                    'data' => $terbranding,
+                    'backgroundColor' => '#10B981',
                 ],
                 [
                     'label' => 'Rejected',
                     'data' => $rejected,
                     'backgroundColor' => '#EF4444',
-                    'borderColor' => '#EF4444',
                 ],
             ],
             'labels' => $labels,
@@ -88,7 +104,11 @@ class UmkmChartWidget extends ChartWidget
                 ],
             ],
             'scales' => [
+                'x' => [
+                    'stacked' => true,
+                ],
                 'y' => [
+                    'stacked' => true,
                     'beginAtZero' => true,
                     'ticks' => [
                         'stepSize' => 1,
