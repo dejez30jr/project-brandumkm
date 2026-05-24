@@ -14,106 +14,89 @@ class UmkmExport implements FromCollection, WithHeadings
         $this->records = $records;
     }
 
+    private function fileUrl(?string $path): string
+    {
+        if (!$path) return '-';
+        return url('storage/' . $path);
+    }
+
     public function collection()
     {
         return collect($this->records)->map(function ($item) {
-
             return [
+                $item->nama_usaha,
+                $item->nama_pemilik,
+                $item->alamat_usaha,
+                $item->no_wa,
+                $item->radius ?? '-',
+                $item->jam_buka ?? '-',
+                $item->jam_tutup ?? '-',
+                $item->request_text ?? '-',
+                $item->catatan ?? '-',
 
-                'Nama Usaha' => $item->nama_usaha,
-                'Nama Pemilik' => $item->nama_pemilik,
-                'Alamat Usaha' => $item->alamat_usaha,
-                'No WA' => $item->no_wa,
-                'Radius' => $item->radius,
-                'Jam Buka' => $item->jam_buka,
-                'Jam Tutup' => $item->jam_tutup,
-                'Request Teks Branding' => $item->request_text,
-                'Catatan' => $item->catatan,
+                $item->no_rekening ?? '-',
+                $item->nama_bank ?? '-',
+                $item->atas_nama_rekening ?? '-',
 
-                'No Rekening' => $item->no_rekening,
-                'Nama Bank' => $item->nama_bank,
-                'Atas Nama Rekening' => $item->atas_nama_rekening,
+                $item->latitude ?? '-',
+                $item->longitude ?? '-',
+                $item->sharelock_url ?? '-',
 
-                'Latitude' => $item->latitude,
-                'Longitude' => $item->longitude,
-                'Sharelock URL' => $item->sharelock_url,
+                $item->depan_atas_w ?? '-',
+                $item->depan_atas_h ?? '-',
+                $item->depan_panel_atas_m2 ?? '-',
+                $item->depan_bawah_w ?? '-',
+                $item->depan_bawah_h ?? '-',
+                $item->depan_panel_bawah_m2 ?? '-',
 
-                'Depan Panel Atas (m2)' => $item->depan_panel_atas_m2,
-                'Depan Panel Tengah (m2)' => $item->depan_panel_tengah_m2,
-                'Depan Panel Bawah (m2)' => $item->depan_panel_bawah_m2,
+                $item->kanan_atas_w ?? '-',
+                $item->kanan_atas_h ?? '-',
+                $item->kanan_panel_atas_m2 ?? '-',
+                $item->kanan_bawah_w ?? '-',
+                $item->kanan_bawah_h ?? '-',
+                $item->kanan_panel_bawah_m2 ?? '-',
 
-                'Kanan Panel Atas (m2)' => $item->kanan_panel_atas_m2,
-                'Kanan Panel Tengah (m2)' => $item->kanan_panel_tengah_m2,
-                'Kanan Panel Bawah (m2)' => $item->kanan_panel_bawah_m2,
+                $item->kiri_atas_w ?? '-',
+                $item->kiri_atas_h ?? '-',
+                $item->kiri_panel_atas_m2 ?? '-',
+                $item->kiri_bawah_w ?? '-',
+                $item->kiri_bawah_h ?? '-',
+                $item->kiri_panel_bawah_m2 ?? '-',
 
-                'Kiri Panel Atas (m2)' => $item->kiri_panel_atas_m2,
-                'Kiri Panel Tengah (m2)' => $item->kiri_panel_tengah_m2,
-                'Kiri Panel Bawah (m2)' => $item->kiri_panel_bawah_m2,
+                $item->total_area_branding ?? '-',
+                $item->memenuhi_kriteria ? 'Ya' : 'Tidak',
 
-                'Total Area Branding' => $item->total_area_branding,
+                ucfirst(str_replace('_', ' ', $item->status)),
+                $item->alasan_reject ?? '-',
 
-                'Memenuhi Kriteria' => $item->memenuhi_kriteria ? 'Ya' : 'Tidak',
+                optional($item->approved_at)->format('d-m-Y H:i') ?? '-',
+                $item->approvedBy?->name ?? '-',
 
-                'Status' => $item->status,
-                'Alasan Reject' => $item->alasan_reject,
+                $this->fileUrl($item->foto_depan),
+                $this->fileUrl($item->foto_kanan),
+                $this->fileUrl($item->foto_kiri),
+                $this->fileUrl($item->foto_plang_alfamart),
+                $this->fileUrl($item->foto_tampak_jauh),
+                $this->fileUrl($item->video_validasi),
 
-                'Approved At' => $item->approved_at,
-                'Approved By' => $item->approved_by,
+                $item->kota?->nama ?? '-',
+                $item->submittedBy?->name ?? '-',
 
-                'Foto Depan' => $item->foto_depan,
-                'Foto Kanan' => $item->foto_kanan,
-                'Foto Kiri' => $item->foto_kiri,
-                'Foto Plang Alfamart' => $item->foto_plang_alfamart,
+                optional($item->created_at)->format('d-m-Y H:i'),
+                optional($item->updated_at)->format('d-m-Y H:i'),
 
-                'Video Validasi' => $item->video_validasi,
+                $this->fileUrl($item->design_final),
+                $this->fileUrl($item->design_gerobak_depan),
+                $this->fileUrl($item->design_gerobak_kiri),
+                $this->fileUrl($item->design_gerobak_kanan),
+                $item->umkmDesign?->nama_desainer ?? '-',
 
-                'Kota' => $item->kota?->nama ?? '-',
-
-                'Submitted By' => $item->submittedBy?->name ?? '-',
-
-                'Created At' => optional($item->created_at)->format('d-m-Y H:i'),
-                'Updated At' => optional($item->updated_at)->format('d-m-Y H:i'),
-
-                'Depan Atas W' => $item->depan_atas_w,
-                'Depan Atas H' => $item->depan_atas_h,
-
-                'Depan Tengah W' => $item->depan_tengah_w,
-                'Depan Tengah H' => $item->depan_tengah_h,
-
-                'Depan Bawah W' => $item->depan_bawah_w,
-                'Depan Bawah H' => $item->depan_bawah_h,
-
-                'Kanan Atas W' => $item->kanan_atas_w,
-                'Kanan Atas H' => $item->kanan_atas_h,
-
-                'Kanan Tengah W' => $item->kanan_tengah_w,
-                'Kanan Tengah H' => $item->kanan_tengah_h,
-
-                'Kanan Bawah W' => $item->kanan_bawah_w,
-                'Kanan Bawah H' => $item->kanan_bawah_h,
-
-                'Kiri Atas W' => $item->kiri_atas_w,
-                'Kiri Atas H' => $item->kiri_atas_h,
-
-                'Kiri Tengah W' => $item->kiri_tengah_w,
-                'Kiri Tengah H' => $item->kiri_tengah_h,
-
-                'Kiri Bawah W' => $item->kiri_bawah_w,
-                'Kiri Bawah H' => $item->kiri_bawah_h,
-
-                'Design Final' => $item->design_final,
-
-                'Design Gerobak Depan' => $item->design_gerobak_depan,
-                'Design Gerobak Kiri' => $item->design_gerobak_kiri,
-                'Design Gerobak Kanan' => $item->design_gerobak_kanan,
-
-                'Stiker Tampak Depan' => $item->stiker_tampak_depan,
-                'Stiker Tampak Kanan' => $item->stiker_tampak_kanan,
-                'Stiker Tampak Kiri' => $item->stiker_tampak_kiri,
-                'Foto Wide' => $item->foto_wide,
-                'Tanggal Pasang' => $item->tanggal_pasang,
-                'Nama Team Pasang' => $item->nama_team_pasang,
-                'Nama Desainer' => $item->umkmDesign?->nama_desainer ?? '-',
+                $this->fileUrl($item->stiker_tampak_depan),
+                $this->fileUrl($item->stiker_tampak_kanan),
+                $this->fileUrl($item->stiker_tampak_kiri),
+                $this->fileUrl($item->foto_wide),
+                $item->tanggal_pasang ?? '-',
+                $item->nama_team_pasang ?? '-',
             ];
         });
     }
@@ -121,7 +104,6 @@ class UmkmExport implements FromCollection, WithHeadings
     public function headings(): array
     {
         return [
-
             'Nama Usaha',
             'Nama Pemilik',
             'Alamat Usaha',
@@ -140,74 +122,54 @@ class UmkmExport implements FromCollection, WithHeadings
             'Longitude',
             'Sharelock URL',
 
-            'Depan Panel Atas (m2)',
-            'Depan Panel Tengah (m2)',
-            'Depan Panel Bawah (m2)',
+            'Depan Atas W (cm)',
+            'Depan Atas H (cm)',
+            'Depan Panel Atas (m²)',
+            'Depan Bawah W (cm)',
+            'Depan Bawah H (cm)',
+            'Depan Panel Bawah (m²)',
 
-            'Kanan Panel Atas (m2)',
-            'Kanan Panel Tengah (m2)',
-            'Kanan Panel Bawah (m2)',
+            'Kanan Atas W (cm)',
+            'Kanan Atas H (cm)',
+            'Kanan Panel Atas (m²)',
+            'Kanan Bawah W (cm)',
+            'Kanan Bawah H (cm)',
+            'Kanan Panel Bawah (m²)',
 
-            'Kiri Panel Atas (m2)',
-            'Kiri Panel Tengah (m2)',
-            'Kiri Panel Bawah (m2)',
+            'Kiri Atas W (cm)',
+            'Kiri Atas H (cm)',
+            'Kiri Panel Atas (m²)',
+            'Kiri Bawah W (cm)',
+            'Kiri Bawah H (cm)',
+            'Kiri Panel Bawah (m²)',
 
-            'Total Area Branding',
-
+            'Total Area Branding (m²)',
             'Memenuhi Kriteria',
 
             'Status',
             'Alasan Reject',
 
-            'Approved At',
-            'Approved By',
+            'Tanggal Approve',
+            'Diapprove Oleh',
 
             'Foto Depan',
             'Foto Kanan',
             'Foto Kiri',
             'Foto Plang Alfamart',
-
+            'Foto Tampak Jauh',
             'Video Validasi',
 
             'Kota',
+            'PIC Lapangan',
 
-            'Submitted By',
-
-            'Created At',
-            'Updated At',
-
-            'Depan Atas W',
-            'Depan Atas H',
-
-            'Depan Tengah W',
-            'Depan Tengah H',
-
-            'Depan Bawah W',
-            'Depan Bawah H',
-
-            'Kanan Atas W',
-            'Kanan Atas H',
-
-            'Kanan Tengah W',
-            'Kanan Tengah H',
-
-            'Kanan Bawah W',
-            'Kanan Bawah H',
-
-            'Kiri Atas W',
-            'Kiri Atas H',
-
-            'Kiri Tengah W',
-            'Kiri Tengah H',
-
-            'Kiri Bawah W',
-            'Kiri Bawah H',
+            'Tanggal Submit',
+            'Terakhir Update',
 
             'Design Final',
-
             'Design Gerobak Depan',
             'Design Gerobak Kiri',
             'Design Gerobak Kanan',
+            'Nama Desainer',
 
             'Stiker Tampak Depan',
             'Stiker Tampak Kanan',
@@ -215,7 +177,6 @@ class UmkmExport implements FromCollection, WithHeadings
             'Foto Wide',
             'Tanggal Pasang',
             'Nama Team Pasang',
-            'Nama Desainer',
         ];
     }
 }
