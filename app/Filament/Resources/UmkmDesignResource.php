@@ -18,8 +18,9 @@ class UmkmDesignResource extends Resource
     protected static ?string $model = UmkmDesign::class;
     protected static ?string $navigationIcon = 'heroicon-o-paint-brush';
     protected static ?string $navigationGroup = 'Data UMKM';
-    protected static ?string $label = 'Design UMKM';
-    protected static ?string $pluralLabel = 'Design UMKM';
+    protected static ?string $label = 'History UMKM';
+    protected static ?string $pluralLabel = 'History UMKM';
+    protected static ?string $navigationLabel = 'History UMKM';
 
     public static function canAccess(): bool
     {
@@ -155,7 +156,7 @@ class UmkmDesignResource extends Resource
                             ->live(),
 
                         Forms\Components\FileUpload::make('file_path')
-                            ->label('Screenshot File FA / Final Artwork Design (Wajib 1 Gambar)')
+                            ->label('Upload Flat Mockup / Final Artwork Design (Wajib 1 Gambar)')
                             ->directory(fn (Forms\Get $get) => 'umkm/' . (Umkm::find($get('umkm_id'))?->kota_id ?: 'temp') . '/design')
                             ->required(),
 
