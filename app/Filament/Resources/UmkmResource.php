@@ -173,6 +173,7 @@ public static function canDelete($record): bool
     ->options(Kota::pluck('nama', 'id'))
     ->searchable()
     ->preload()
+    ->required()
 
     ->createOptionAction(function ($action) {
         return $action->label('Tambah Kota');
@@ -247,159 +248,12 @@ public static function canDelete($record): bool
                 Forms\Components\Wizard\Step::make('Lokasi')
                     ->icon('heroicon-o-map-pin')
                     ->schema([
-                         // GPS WAJIB — tidak bisa lanjut tanpa koordinat
-        Forms\Components\Placeholder::make('auto_location_trigger')
-            ->label('')
-            ->content(new \Illuminate\Support\HtmlString(
-                '<div 
-                    x-data="{
-                        loading: false,
-                        success: false,
-                        blocked: true,
-                        denied: false,
-                        errorMsg: \'\',
-                        attempts: 0,
-                        async init() {
-                            // Cek status permission dulu
-                            if (navigator.permissions) {
-                                try {
-                                    let result = await navigator.permissions.query({name: \"geolocation\"});
-                                    if (result.state === \"denied\") {
-                                        this.denied = true;
-                                        this.errorMsg = \"Lokasi diblokir permanen.\";
-                                        return;
-                                    }
-                                    // Listen perubahan permission (user ubah di settings)
-                                    result.onchange = () => {
-                                        if (result.state === \"granted\") {
-                                            this.denied = false;
-                                            this.getLocation();
-                                        } else if (result.state === \"denied\") {
-                                            this.denied = true;
-                                            this.errorMsg = \"Lokasi diblokir permanen.\";
-                                        }
-                                    };
-                                } catch(e) {}
-                            }
-                            this.getLocation();
-                        },
-                        getLocation() {
-                            if (this.denied) return;
-                            this.loading = true;
-                            this.errorMsg = \'\';
-                            this.attempts++;
-
-                            if (!navigator.geolocation) {
-                                this.loading = false;
-                                this.errorMsg = \'Perangkat tidak mendukung GPS.\';
-                                return;
-                            }
-
-                            navigator.geolocation.getCurrentPosition(
-                                (position) => {
-                                    let lat = position.coords.latitude.toFixed(8);
-                                    let lng = position.coords.longitude.toFixed(8);
-                                    $wire.set(\'data.latitude\', lat);
-                                    $wire.set(\'data.longitude\', lng);
-                                    $wire.set(\'data.sharelock_url\', \'https://www.google.com/maps?q=\' + lat + \',\' + lng);
-                                    this.loading = false;
-                                    this.success = true;
-                                    this.blocked = false;
-                                    this.denied = false;
-                                },
-                                (err) => {
-                                    this.loading = false;
-                                    if (err.code === 1) {
-                                        this.denied = true;
-                                        this.errorMsg = \'Lokasi diblokir permanen.\';
-                                    } else if (err.code === 2) {
-                                        this.errorMsg = \'GPS tidak aktif.\';
-                                    } else {
-                                        if (this.attempts < 5) {
-                                            setTimeout(() => this.getLocation(), 2000);
-                                            return;
-                                        }
-                                        this.errorMsg = \'Gagal mengambil lokasi.\';
-                                    }
-                                },
-                                { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
-                            );
-                        }
-                    }"
-                >
-                    <!-- OVERLAY BLOCKER — menutupi seluruh halaman sampai GPS berhasil -->
-                    <div x-show="blocked" x-transition class="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4" style="backdrop-filter: blur(6px);">
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
-                            <!-- Icon GPS -->
-                            <div class="mx-auto w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
-                                <svg class="w-10 h-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                            </div>
-
-                            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">GPS WAJIB AKTIF</h2>
-                            <p class="text-gray-600 dark:text-gray-300 text-sm mb-4">Anda <strong>tidak dapat melanjutkan</strong> tanpa mengaktifkan lokasi.<br>Ini adalah <strong>kebijakan perusahaan</strong>.</p>
-
-                            <!-- Loading state -->
-                            <div x-show="loading" class="flex items-center justify-center gap-2 text-blue-600 mb-4">
-                                <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span class="font-medium">Mengambil lokasi...</span>
-                            </div>
-
-                            <!-- DENIED: instruksi reset permission -->
-                            <div x-show="denied && !loading" class="mb-4">
-                                <div class="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-lg p-4 mb-3 text-left">
-                                    <p class="text-red-700 dark:text-red-400 font-bold text-sm mb-2">⛔ LOKASI DIBLOKIR</p>
-                                    <p class="text-red-600 dark:text-red-300 text-xs mb-3">Anda telah menolak izin lokasi. Untuk melanjutkan, Anda HARUS mengubah pengaturan:</p>
-                                    <div class="text-xs text-gray-700 dark:text-gray-300 space-y-1.5 bg-white dark:bg-gray-900 rounded p-3 border">
-                                        <p class="font-bold text-gray-900 dark:text-white">📱 Di HP (Chrome/WebView):</p>
-                                        <p>1. Tap ikon 🔒 di address bar (atau ⋮ menu)</p>
-                                        <p>2. Pilih <strong>Izin Situs / Site Settings</strong></p>
-                                        <p>3. Tap <strong>Lokasi</strong> → ubah ke <strong>Izinkan</strong></p>
-                                        <p>4. Kembali ke halaman ini & tekan tombol di bawah</p>
-                                        <hr class="my-2 border-gray-200">
-                                        <p class="font-bold text-gray-900 dark:text-white">📱 Di Aplikasi (WebView APK):</p>
-                                        <p>1. Buka <strong>Pengaturan HP</strong></p>
-                                        <p>2. Pilih <strong>Aplikasi</strong> → cari aplikasi ini</p>
-                                        <p>3. Tap <strong>Izin</strong> → <strong>Lokasi</strong> → <strong>Izinkan</strong></p>
-                                        <p>4. Kembali ke aplikasi & tekan tombol di bawah</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- GPS OFF: instruksi nyalakan -->
-                            <div x-show="errorMsg && !denied && !loading" class="mb-4">
-                                <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-300 rounded-lg p-3 mb-3 text-left">
-                                    <p class="text-yellow-800 dark:text-yellow-300 font-semibold text-sm" x-text="errorMsg"></p>
-                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-2 space-y-1">
-                                        <p>1. Geser notification bar ke bawah</p>
-                                        <p>2. Tap ikon <strong>Lokasi/GPS</strong> hingga menyala</p>
-                                        <p>3. Tekan tombol di bawah</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button x-show="!loading" type="button" @click="denied = false; attempts = 0; getLocation()" class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 active:bg-blue-800 transition text-sm uppercase tracking-wide">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                                SUDAH AKTIF — COBA LAGI
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Success indicator (setelah GPS berhasil) -->
-                    <div x-show="success" x-transition class="flex items-center gap-2 text-success-600 p-4 bg-success-50 dark:bg-success-900/20 rounded-lg mb-4 border border-success-200">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="font-medium">✅ Lokasi GPS berhasil diambil!</span>
-                    </div>
-                </div>'
-            ))
-            ->columnSpanFull(),
+                        // GPS — ViewField dengan Alpine inline
+                        \Filament\Forms\Components\ViewField::make('get_location')
+                            ->label('Lokasi GPS')
+                            ->view('filament.forms.components.get-location-button')
+                            ->key('gps-v3')
+                            ->columnSpanFull(),
 
         Forms\Components\Grid::make(2)
             ->schema([
@@ -752,20 +606,26 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
                     ->badge()
                     ->color(fn (string $state): string => match (true) {
                         $state === 'pending' => 'warning',
-                        in_array($state, ['approved', 'design_approved', 'branded']) => 'success',
+                        in_array($state, ['approved', 'design_approved', 'branded', 'terbranding_final', 'installation_completed']) => 'success',
                         in_array($state, ['rejected', 'revision_needed']) => 'danger',
-                        in_array($state, ['designing', 'design_review']) => 'info',
+                        in_array($state, ['designing', 'design_review', 'menunggu_didesain', 'revision']) => 'info',
+                        in_array($state, ['waiting_installation']) => 'primary',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'pending' => 'Pending',
                         'approved' => 'Approved',
                         'rejected' => 'Rejected',
+                        'menunggu_didesain' => 'Menunggu Di-design',
                         'designing' => 'Sedang Didesain',
                         'design_review' => 'Review Design',
                         'design_approved' => 'Design OK',
+                        'waiting_installation' => 'Waiting Installation',
                         'revision_needed' => 'Perlu Revisi',
+                        'revision' => 'Sedang Direvisi',
+                        'installation_completed' => 'Installation Completed',
                         'branded' => 'Terbranding',
+                        'terbranding_final' => 'UMKM Terbranding Final',
                         default => ucfirst($state),
                     }),
                 Tables\Columns\TextColumn::make('submittedBy.name')
@@ -782,11 +642,16 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
                         'pending' => 'Pending',
                         'approved' => 'Approved',
                         'rejected' => 'Rejected',
+                        'menunggu_didesain' => 'Menunggu Di-design',
                         'designing' => 'Sedang Didesain',
                         'design_review' => 'Design Menunggu Review',
                         'design_approved' => 'Design Disetujui',
+                        'waiting_installation' => 'Waiting Installation',
                         'revision_needed' => 'Perlu Revisi Design',
+                        'revision' => 'Sedang Direvisi',
+                        'installation_completed' => 'Installation Completed',
                         'branded' => 'Sudah Terbranding',
+                        'terbranding_final' => 'UMKM Terbranding Final',
                     ]),
                 Tables\Filters\SelectFilter::make('kota_id')
                     ->label('Kota')
@@ -1003,6 +868,53 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
         !empty($record->design_gerobak_kanan)
     ), // section hanya muncul kalau ada minimal 1 gambar
 
+    // TOMBOL AKSI — wajib di bottom per PRD
+    \Filament\Infolists\Components\Section::make('Tindakan')
+        ->schema([
+            \Filament\Infolists\Components\Actions::make([
+                \Filament\Infolists\Components\Actions\Action::make('approve_umkm')
+                    ->label('Approve UMKM')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Approve UMKM ini?')
+                    ->visible(fn (Umkm $record) =>
+                        $record->status === 'pending' && auth()->user()->isClient()
+                    )
+                    ->action(function (Umkm $record) {
+                        $record->update([
+                            'status' => 'approved',
+                            'approved_at' => now(),
+                            'approved_by' => auth()->id(),
+                        ]);
+                        \Filament\Notifications\Notification::make()->title('UMKM Disetujui ✅')->success()->send();
+                    }),
+
+                \Filament\Infolists\Components\Actions\Action::make('reject_umkm')
+                    ->label('Reject UMKM')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->form([
+                        \Filament\Forms\Components\Textarea::make('alasan_reject')
+                            ->label('Alasan Reject')
+                            ->required(),
+                    ])
+                    ->visible(fn (Umkm $record) =>
+                        $record->status === 'pending' && auth()->user()->isClient()
+                    )
+                    ->action(function (Umkm $record, array $data) {
+                        $record->update([
+                            'status' => 'rejected',
+                            'alasan_reject' => $data['alasan_reject'],
+                        ]);
+                        \Filament\Notifications\Notification::make()->title('UMKM Ditolak ❌')->danger()->send();
+                    }),
+            ])->columnSpanFull(),
+        ])
+        ->visible(fn (Umkm $record) =>
+            $record->status === 'pending' && auth()->user()->isClient()
+        ),
+
     ])
     ->modalWidth('7xl'),
               Tables\Actions\EditAction::make()
@@ -1059,13 +971,63 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
         ->label('Export Excel')
         ->icon('heroicon-o-document-arrow-down')
         ->color('success')
-        ->action(function ($livewire) {
+        ->form([
+            Forms\Components\Select::make('filter_type')
+                ->label('Filter Export')
+                ->options([
+                    'all'      => 'Semua Data (Raw Data)',
+                    'kota'     => 'Per Kota',
+                    'pic'      => 'Per PIC Lapangan',
+                    'designer' => 'Per Desainer',
+                ])
+                ->default('all')
+                ->live()
+                ->required(),
 
-            $query = $livewire->getFilteredTableQuery();
+            Forms\Components\Select::make('kota_id')
+                ->label('Pilih Kota')
+                ->options(Kota::orderBy('nama')->pluck('nama', 'id'))
+                ->searchable()
+                ->preload()
+                ->visible(fn ($get) => $get('filter_type') === 'kota')
+                ->required(fn ($get) => $get('filter_type') === 'kota'),
+
+            Forms\Components\Select::make('pic_id')
+                ->label('Pilih PIC Lapangan')
+                ->options(\App\Models\User::where('role', 'pic_lapangan')->pluck('name', 'id'))
+                ->searchable()
+                ->preload()
+                ->visible(fn ($get) => $get('filter_type') === 'pic')
+                ->required(fn ($get) => $get('filter_type') === 'pic'),
+
+            Forms\Components\Select::make('designer_id')
+                ->label('Pilih Desainer')
+                ->options(\App\Models\User::where('role', 'design')->pluck('name', 'id'))
+                ->searchable()
+                ->preload()
+                ->visible(fn ($get) => $get('filter_type') === 'designer')
+                ->required(fn ($get) => $get('filter_type') === 'designer'),
+        ])
+        ->action(function (array $data) {
+            $query = \App\Models\Umkm::with(['kota', 'submittedBy', 'umkmDesign']);
+
+            match ($data['filter_type']) {
+                'kota'     => $query->where('kota_id', $data['kota_id']),
+                'pic'      => $query->where('submitted_by', $data['pic_id']),
+                'designer' => $query->whereHas('designs', fn ($q) => $q->where('designer_id', $data['designer_id'])),
+                default    => null,
+            };
+
+            $filename = match ($data['filter_type']) {
+                'kota'     => 'export_kota_' . $data['kota_id'],
+                'pic'      => 'export_pic_' . $data['pic_id'],
+                'designer' => 'export_designer_' . $data['designer_id'],
+                default    => 'export_all',
+            };
 
             return \Maatwebsite\Excel\Facades\Excel::download(
                 new \App\Exports\UmkmExport($query->get()),
-                'umkm_terbranding_' . now()->format('Ymd_His') . '.xlsx'
+                $filename . '_' . now()->format('Ymd_His') . '.xlsx'
             );
         }),
 
