@@ -41,6 +41,16 @@ class UmkmDesignObserver
         }
 
         if ($design->status === 'approved') {
+            if ($design->umkm) {
+                $design->umkm->update([
+                    'status' => Umkm::STATUS_WAITING_INSTALLATION,
+                    'design_final' => $design->file_path,
+                    'design_gerobak_depan' => $design->gerobak_depan,
+                    'design_gerobak_kiri' => $design->gerobak_kiri,
+                    'design_gerobak_kanan' => $design->gerobak_kanan,
+                ]);
+            }
+            NotifikasiService::notifyDesignApproved($design);
             NotifikasiService::notifyTeamPasangDesignApproved($design);
         }
     }
