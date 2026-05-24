@@ -20,3 +20,5 @@ yarn-error.log
 
 PHASES/
 WORKPLAN.md
+.DS_Store
+*.jpg
