@@ -406,14 +406,11 @@ class UmkmDesignResource extends Resource
                                 ->label('Approve Design')
                                 ->icon('heroicon-o-check-circle')
                                 ->color('success')
-                                ->requiresConfirmation()
-                                ->modalHeading('Approve design ini?')
                                 ->visible(fn (UmkmDesign $record) =>
                                     in_array($record->status, ['pending', 'revised']) &&
                                     auth()->user()->isClient()
                                 )
                                 ->action(function (UmkmDesign $record) {
-                                    // Observer handles UMKM status + notifications
                                     $record->update([
                                         'status' => 'approved',
                                         'approved_at' => now(),
@@ -426,25 +423,28 @@ class UmkmDesignResource extends Resource
                                 ->label('Minta Revisi')
                                 ->icon('heroicon-o-pencil')
                                 ->color('warning')
-                                ->form([
-                                    \Filament\Forms\Components\Textarea::make('catatan_revisi')
-                                        ->label('Catatan Revisi')
-                                        ->required(),
-                                ])
                                 ->visible(fn (UmkmDesign $record) =>
                                     in_array($record->status, ['pending', 'revised']) &&
                                     auth()->user()->isClient()
                                 )
-                                ->action(function (UmkmDesign $record, array $data) {
+                                ->action(function (UmkmDesign $record, array $arguments) {
                                     $record->update([
                                         'status' => 'revision_needed',
-                                        'catatan_revisi' => $data['catatan_revisi'],
+                                        'catatan_revisi' => $arguments['reason'] ?? 'Perlu revisi',
                                     ]);
                                     if ($record->umkm) {
                                         $record->umkm->update(['status' => Umkm::STATUS_REVISION_NEEDED]);
                                     }
                                     \Filament\Notifications\Notification::make()->title('Revisi Diminta')->warning()->send();
-                                }),
+                                })
+                                ->extraAttributes([
+                                    'x-on:click.prevent' => "
+                                        let reason = prompt('Masukkan catatan revisi (wajib):');
+                                        if (reason && reason.trim() !== '') {
+                                            \$wire.mountInfolistAction('revisi_design', { reason: reason });
+                                        }
+                                    ",
+                                ]),
                         ])->columnSpanFull(),
                     ])
                     ->visible(fn (UmkmDesign $record) =>
