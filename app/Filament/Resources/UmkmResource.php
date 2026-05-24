@@ -1009,7 +1009,7 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
                 ->required(fn ($get) => $get('filter_type') === 'designer'),
         ])
         ->action(function (array $data) {
-            $query = \App\Models\Umkm::with(['kota', 'submittedBy', 'umkmDesign']);
+            $query = \App\Models\Umkm::with(['kota', 'submittedBy', 'umkmDesign', 'approvedBy']);
 
             match ($data['filter_type']) {
                 'kota'     => $query->where('kota_id', $data['kota_id']),
@@ -1049,7 +1049,7 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
                             ->options(['' => 'Semua Kota'] + Kota::pluck('nama', 'id')->toArray()),
                     ])
                     ->action(function (array $data) {
-                        $query = Umkm::with(['kota', 'submittedBy']);
+                        $query = Umkm::with(['kota', 'submittedBy', 'umkmDesign']);
 
                         if (!empty($data['status'])) {
                             $query->where('status', $data['status']);
