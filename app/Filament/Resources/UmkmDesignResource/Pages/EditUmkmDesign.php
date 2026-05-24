@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\UmkmDesignResource\Pages;
 
 use App\Filament\Resources\UmkmDesignResource;
+use App\Models\Umkm;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -15,6 +16,22 @@ class EditUmkmDesign extends EditRecord
         return [
             Actions\DeleteAction::make(),
         ];
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        if (auth()->user()?->isDesign()) {
+            $data['status'] = 'revised';
+        }
+
+        return $data;
+    }
+
+    protected function afterSave(): void
+    {
+        if (auth()->user()?->isDesign() && $this->record->umkm) {
+            $this->record->umkm->update(['status' => Umkm::STATUS_DESIGN_REVIEW]);
+        }
     }
 }
 
