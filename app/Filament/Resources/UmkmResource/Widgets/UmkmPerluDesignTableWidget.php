@@ -34,8 +34,7 @@ class UmkmPerluDesignTableWidget extends BaseWidget
     return $table
      ->query(
             Umkm::query()
-                // Ganti 'status' menjadi 'umkms.status' agar tidak ambigu
-                ->where('umkms.status', 'approved') 
+                ->whereIn('umkms.status', ['menunggu_didesain', 'approved'])
                 ->leftJoin('umkm_designs', 'umkm_designs.umkm_id', '=', 'umkms.id')
                 ->where(function ($query) use ($user) {
                     $query->whereNull('umkm_designs.id')
