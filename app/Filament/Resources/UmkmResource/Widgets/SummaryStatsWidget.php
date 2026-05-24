@@ -181,7 +181,7 @@ class SummaryStatsWidget extends BaseWidget
         if (in_array($userRole, ['design', 'admin'])) {
             if ($userRole === 'design') {
                 $queryAntrean = Umkm::query()
-                    ->whereIn('umkms.status', [Umkm::STATUS_APPROVED, Umkm::STATUS_REVISION_NEEDED])
+                    ->whereIn('umkms.status', [Umkm::STATUS_APPROVED, Umkm::STATUS_MENUNGGU_DIDESAIN, Umkm::STATUS_REVISION_NEEDED])
                     ->leftJoin('umkm_designs', 'umkm_designs.umkm_id', '=', 'umkms.id')
                     ->where(function ($q) use ($user) {
                         $q->whereNull('umkm_designs.id')
