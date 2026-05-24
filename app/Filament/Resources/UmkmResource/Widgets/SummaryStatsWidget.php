@@ -167,7 +167,7 @@ class SummaryStatsWidget extends BaseWidget
                 $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Design Perlu Di-review</span>'), $totalDesignReview)
                     ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Menunggu approval client</span>'))
                     ->descriptionIcon('heroicon-m-eye')->color('warning')
-                    ->url(UmkmDesignResource::getUrl('index'))
+                    ->url(UmkmDesignResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'pending']]]))
                     ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #c2410c;',
                         'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
             }
