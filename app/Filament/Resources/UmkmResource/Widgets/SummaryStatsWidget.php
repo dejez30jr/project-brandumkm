@@ -123,6 +123,7 @@ class SummaryStatsWidget extends BaseWidget
             $totalReject   = Umkm::where('status', 'rejected')->count();
             $totalApproved = Umkm::whereIn('status', ['approved', 'menunggu_didesain'])->count();
             $totalPerluDesain = Umkm::where('status', 'menunggu_didesain')->count();
+            $totalDesignReview = UmkmDesign::whereIn('status', ['pending', 'revised'])->count();
             $totalRevisi   = UmkmDesign::where('status', 'revision_needed')->count();
             $totalSiapLanjut = UmkmDesign::whereIn('status', ['approved', 'revised'])->count();
             $totalFinal    = Umkm::whereIn('status', ['branded', 'terbranding_final'])->count();
@@ -160,6 +161,13 @@ class SummaryStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-paint-brush')->color('warning')
                 ->url(UmkmDesignResource::getUrl('index'))
                 ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #d97706;',
+                    'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
+
+            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Design Perlu Di-review</span>'), $totalDesignReview)
+                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Menunggu approval client</span>'))
+                ->descriptionIcon('heroicon-m-eye')->color('warning')
+                ->url(UmkmDesignResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'pending']]]))
+                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #c2410c;',
                     'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
 
             $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Total Revisi Desain</span>'), $totalRevisi)
