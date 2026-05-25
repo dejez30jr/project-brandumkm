@@ -21,9 +21,9 @@ class UmkmTerbrandingResource extends Resource
     // Tetap menggunakan Model Umkm karena datanya menyatu di sana
     protected static ?string $model = Umkm::class;
 
-    protected static ?string $navigationLabel = 'UMKM Terbranding';
-        protected static ?string $label = 'UMKM Terbranding';
-    protected static ?string $pluralLabel = 'UMKM Terbranding';
+    protected static ?string $navigationLabel = 'UMKM Branded';
+        protected static ?string $label = 'UMKM Branded';
+    protected static ?string $pluralLabel = 'UMKM Branded';
       protected static ?string $navigationGroup = 'Data UMKM';
     
     protected static ?string $slug = 'umkm-terbranding';
@@ -181,6 +181,12 @@ class UmkmTerbrandingResource extends Resource
 
                 \Filament\Infolists\Components\TextEntry::make('kota.nama')
                     ->label('Kota'),
+
+                \Filament\Infolists\Components\TextEntry::make('jam_buka')
+                    ->label('Jam Buka'),
+
+                \Filament\Infolists\Components\TextEntry::make('jam_tutup')
+                    ->label('Jam Tutup'),
             ])
             ->columns(2),
 

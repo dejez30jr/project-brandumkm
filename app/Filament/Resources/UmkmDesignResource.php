@@ -18,8 +18,9 @@ class UmkmDesignResource extends Resource
     protected static ?string $model = UmkmDesign::class;
     protected static ?string $navigationIcon = 'heroicon-o-paint-brush';
     protected static ?string $navigationGroup = 'Data UMKM';
-    protected static ?string $label = 'Design UMKM';
-    protected static ?string $pluralLabel = 'Design UMKM';
+    protected static ?string $label = 'History UMKM';
+    protected static ?string $pluralLabel = 'History UMKM';
+    protected static ?string $navigationLabel = 'History UMKM';
 
     public static function canAccess(): bool
     {
@@ -155,7 +156,7 @@ class UmkmDesignResource extends Resource
                             ->live(),
 
                         Forms\Components\FileUpload::make('file_path')
-                            ->label('Screenshot File FA / Final Artwork Design (Wajib 1 Gambar)')
+                            ->label('Upload Flat Mockup / Final Artwork Design (Wajib 1 Gambar)')
                             ->directory(fn (Forms\Get $get) => 'umkm/' . (Umkm::find($get('umkm_id'))?->kota_id ?: 'temp') . '/design')
                             ->required(),
 
@@ -398,59 +399,6 @@ class UmkmDesignResource extends Resource
                             ]),
                     ])->columns(2),
 
-                // TOMBOL AKSI — wajib di bottom per PRD
-                \Filament\Infolists\Components\Section::make('Tindakan')
-                    ->schema([
-                        \Filament\Infolists\Components\Actions::make([
-                            \Filament\Infolists\Components\Actions\Action::make('approve_design')
-                                ->label('Approve Design')
-                                ->icon('heroicon-o-check-circle')
-                                ->color('success')
-                                ->requiresConfirmation()
-                                ->modalHeading('Approve design ini?')
-                                ->visible(fn (UmkmDesign $record) =>
-                                    in_array($record->status, ['pending', 'revised']) &&
-                                    auth()->user()->isClient()
-                                )
-                                ->action(function (UmkmDesign $record) {
-                                    // Observer handles UMKM status + notifications
-                                    $record->update([
-                                        'status' => 'approved',
-                                        'approved_at' => now(),
-                                        'approved_by' => auth()->id(),
-                                    ]);
-                                    \Filament\Notifications\Notification::make()->title('Design Disetujui ✅')->success()->send();
-                                }),
-
-                            \Filament\Infolists\Components\Actions\Action::make('revisi_design')
-                                ->label('Minta Revisi')
-                                ->icon('heroicon-o-pencil')
-                                ->color('warning')
-                                ->form([
-                                    \Filament\Forms\Components\Textarea::make('catatan_revisi')
-                                        ->label('Catatan Revisi')
-                                        ->required(),
-                                ])
-                                ->visible(fn (UmkmDesign $record) =>
-                                    in_array($record->status, ['pending', 'revised']) &&
-                                    auth()->user()->isClient()
-                                )
-                                ->action(function (UmkmDesign $record, array $data) {
-                                    $record->update([
-                                        'status' => 'revision_needed',
-                                        'catatan_revisi' => $data['catatan_revisi'],
-                                    ]);
-                                    if ($record->umkm) {
-                                        $record->umkm->update(['status' => Umkm::STATUS_REVISION_NEEDED]);
-                                    }
-                                    \Filament\Notifications\Notification::make()->title('Revisi Diminta')->warning()->send();
-                                }),
-                        ])->columnSpanFull(),
-                    ])
-                    ->visible(fn (UmkmDesign $record) =>
-                        in_array($record->status, ['pending', 'revised']) &&
-                        auth()->user()->isClient()
-                    ),
             ]);
     }
 
@@ -459,6 +407,7 @@ class UmkmDesignResource extends Resource
         return [
             'index' => Pages\ListUmkmDesigns::route('/'),
             'create' => Pages\CreateUmkmDesign::route('/create'),
+            'view' => Pages\ViewUmkmDesign::route('/{record}'),
             'edit' => Pages\EditUmkmDesign::route('/{record}/edit'),
         ];
     }

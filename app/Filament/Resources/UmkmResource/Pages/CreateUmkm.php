@@ -22,10 +22,13 @@ class CreateUmkm extends CreateRecord
         $m2 = fn(?float $w, ?float $h): float => ($w && $h) ? round(($w * $h) / 10000, 2) : 0;
 
         $total = $m2($data['depan_atas_w'] ?? null, $data['depan_atas_h'] ?? null)
+               + $m2($data['depan_tengah_w'] ?? null, $data['depan_tengah_h'] ?? null)
                + $m2($data['depan_bawah_w'] ?? null, $data['depan_bawah_h'] ?? null)
                + $m2($data['kanan_atas_w'] ?? null, $data['kanan_atas_h'] ?? null)
+               + $m2($data['kanan_tengah_w'] ?? null, $data['kanan_tengah_h'] ?? null)
                + $m2($data['kanan_bawah_w'] ?? null, $data['kanan_bawah_h'] ?? null)
                + $m2($data['kiri_atas_w'] ?? null, $data['kiri_atas_h'] ?? null)
+               + $m2($data['kiri_tengah_w'] ?? null, $data['kiri_tengah_h'] ?? null)
                + $m2($data['kiri_bawah_w'] ?? null, $data['kiri_bawah_h'] ?? null);
 
         if ($total < 1.5) {
