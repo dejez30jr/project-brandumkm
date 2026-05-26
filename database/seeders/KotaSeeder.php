@@ -12,22 +12,22 @@ class KotaSeeder extends Seeder
         $kotas = [
             'Bogor',
             'Depok',
-            'Tangerang',
             'Jakarta',
+            'Tangerang',
             'Bekasi',
-            'Cirebon',
             'Sukabumi',
             'Bandung',
+            'Cilegon',
             'Surabaya',
             'Malang',
-            'Bali',
-            'Jogja',
             'Semarang',
             'Solo',
+            'Jogja',
+            'Bali',
         ];
 
         foreach ($kotas as $nama) {
-            Kota::create(['nama' => $nama]);
+            Kota::updateOrCreate(['nama' => $nama]);
         }
     }
 }

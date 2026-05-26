@@ -1,0 +1,49 @@
+services:
+  app:
+    build: .
+    container_name: umkm-app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+    volumes:
+      - app-storage:/var/www/html/storage/app/public
+      - ./.env:/var/www/html/.env:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - umkm-net
+
+  db:
+    image: mysql:8.0
+    container_name: umkm-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-secret}
+      MYSQL_DATABASE: ${DB_DATABASE:-umkm_branding}
+      MYSQL_USER: ${DB_USERNAME:-umkm_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-umkm_pass}
+    volumes:
+      - db-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - umkm-net
+
+volumes:
+  db-data:
+  app-storage:
+
+networks:
+  umkm-net:
+    driver: bridge

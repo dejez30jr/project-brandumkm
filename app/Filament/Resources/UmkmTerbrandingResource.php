@@ -20,11 +20,10 @@ class UmkmTerbrandingResource extends Resource
 {
     // Tetap menggunakan Model Umkm karena datanya menyatu di sana
     protected static ?string $model = Umkm::class;
-    protected static string $resource = UmkmTerbrandingResource::class;
 
-    protected static ?string $navigationLabel = 'UMKM Terbranding';
-        protected static ?string $label = 'UMKM Terbranding';
-    protected static ?string $pluralLabel = 'UMKM Terbranding';
+    protected static ?string $navigationLabel = 'UMKM Branded';
+        protected static ?string $label = 'UMKM Branded';
+    protected static ?string $pluralLabel = 'UMKM Branded';
       protected static ?string $navigationGroup = 'Data UMKM';
     
     protected static ?string $slug = 'umkm-terbranding';
@@ -84,16 +83,11 @@ class UmkmTerbrandingResource extends Resource
             // LOGIKA UTAMA: Hanya select UMKM yang KE-4 KOLOM STIKERNYA SUDAH TERISI
             // ====================================================================
             ->modifyQueryUsing(function (Builder $query) use ($user) {
-                $query->where('status', 'approved') 
+                $query->whereIn('status', ['branded', 'terbranding_final'])
                       ->whereNotNull('stiker_tampak_depan')
                       ->whereNotNull('stiker_tampak_kanan')
                       ->whereNotNull('stiker_tampak_kiri')
                       ->whereNotNull('foto_wide')
-                      
-                      // Filter wilayah kota (Khusus jika team_pasang yang melihat, batasi sesuai kotanya)
-                    //   ->when($user?->role === 'team_pasang' && $user?->kota_id, function ($q) use ($user) {
-                    //       $q->where('kota_id', $user->kota_id);
-                    //   })
                       ->latest(); 
             })
             ->columns([
@@ -137,6 +131,7 @@ class UmkmTerbrandingResource extends Resource
             ])
              ->actions([
         Tables\Actions\ViewAction::make()
+    ->label('Lihat Detail')
     ->slideOver() // optional biar full kanan
     ->infolist([
 
@@ -186,6 +181,12 @@ class UmkmTerbrandingResource extends Resource
 
                 \Filament\Infolists\Components\TextEntry::make('kota.nama')
                     ->label('Kota'),
+
+                \Filament\Infolists\Components\TextEntry::make('jam_buka')
+                    ->label('Jam Buka'),
+
+                \Filament\Infolists\Components\TextEntry::make('jam_tutup')
+                    ->label('Jam Tutup'),
             ])
             ->columns(2),
 
@@ -383,49 +384,27 @@ class UmkmTerbrandingResource extends Resource
                             'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->foto_wide) . '" })',
                         ]),
                 ])->columns(2),
+
+            // LOG PERSONALIA
+            \Filament\Infolists\Components\Section::make('Log Personalia')
+                ->description('Rekam jejak personel yang terlibat dalam proses branding.')
+                ->icon('heroicon-o-users')
+                ->schema([
+                    \Filament\Infolists\Components\TextEntry::make('submittedBy.name')
+                        ->label('Nama PIC Lapangan'),
+                    \Filament\Infolists\Components\TextEntry::make('umkmDesign.nama_desainer')
+                        ->label('Nama Desainer')
+                        ->default('-'),
+                    \Filament\Infolists\Components\TextEntry::make('nama_team_pasang')
+                        ->label('Nama Team Pasang')
+                        ->default('-'),
+                    \Filament\Infolists\Components\TextEntry::make('tanggal_pasang')
+                        ->label('Tanggal Pemasangan')
+                        ->date('d M Y')
+                        ->default('-'),
+                ])->columns(2),
     ])
-    ->modalWidth('7xl')
-    // Section hanya muncul jika salah satu data tersedia
-    ->visible(fn ($record) => !empty($record->status_pasang) || !empty($record->updated_at)),
-               Tables\Actions\EditAction::make()
-    ->visible(fn () => in_array(auth()->user()?->role, ['admin', 'pic_lapangan'])),
-                
-                Tables\Actions\Action::make('approve')
-                    ->label('Approve')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->visible(fn (Umkm $record) => 
-                        $record->status === 'pending' && 
-                        (auth()->user()->isClient())
-                    )
-                    ->action(function (Umkm $record) {
-                        $record->update([
-                            'status' => 'approved',
-                            'approved_at' => now(),
-                            'approved_by' => auth()->id(),
-                        ]);
-                    }),
-                
-                Tables\Actions\Action::make('reject')
-                    ->label('Reject')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->form([
-                        Forms\Components\Textarea::make('alasan_reject')
-                            ->label('Alasan Reject')
-                            ->required(),
-                    ])
-                    ->visible(fn (Umkm $record) => 
-                        $record->status === 'pending' && 
-                        (auth()->user()->isClient())
-                    )
-                    ->action(function (Umkm $record, array $data) {
-                        $record->update([
-                            'status' => 'rejected',
-                            'alasan_reject' => $data['alasan_reject'],
-                        ]);
-                    }),
+    ->modalWidth('7xl'),
             ])
 ->headerActions([
     Action::make('exportExcel')
@@ -434,7 +413,7 @@ class UmkmTerbrandingResource extends Resource
         ->color('success')
         ->action(function ($livewire) {
 
-            $query = $livewire->getFilteredTableQuery();
+            $query = $livewire->getFilteredTableQuery()->with(['kota', 'submittedBy', 'umkmDesign', 'approvedBy']);
 
             return \Maatwebsite\Excel\Facades\Excel::download(
                 new \App\Exports\UmkmExport($query->get()),

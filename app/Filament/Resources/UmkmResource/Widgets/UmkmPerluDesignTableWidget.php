@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Widgets;
+namespace App\Filament\Resources\UmkmResource\Widgets;
 
 use App\Filament\Resources\UmkmDesignResource;
 use App\Filament\Resources\UmkmResource;
@@ -34,8 +34,7 @@ class UmkmPerluDesignTableWidget extends BaseWidget
     return $table
      ->query(
             Umkm::query()
-                // Ganti 'status' menjadi 'umkms.status' agar tidak ambigu
-                ->where('umkms.status', 'approved') 
+                ->whereIn('umkms.status', ['menunggu_didesain', 'approved'])
                 ->leftJoin('umkm_designs', 'umkm_designs.umkm_id', '=', 'umkms.id')
                 ->where(function ($query) use ($user) {
                     $query->whereNull('umkm_designs.id')
@@ -342,6 +341,21 @@ class UmkmPerluDesignTableWidget extends BaseWidget
                     !empty($record->design_gerobak_kiri) ||
                     !empty($record->design_gerobak_kanan)
                 ),
+
+                // TOMBOL AKSI DI BOTTOM POPUP
+                \Filament\Infolists\Components\Section::make('Tindakan')
+                    ->schema([
+                        \Filament\Infolists\Components\Actions::make([
+                            \Filament\Infolists\Components\Actions\Action::make('design_sekarang')
+                                ->label(fn (Umkm $record) => $record->umkmDesign?->status === 'revision_needed' ? 'Revisi Sekarang' : 'Design Sekarang')
+                                ->icon('heroicon-o-paint-brush')
+                                ->color('warning')
+                                ->url(fn (Umkm $record) => $record->umkmDesign?->status === 'revision_needed'
+                                    ? '/admin/umkm-designs/' . $record->umkmDesign->id . '/edit?umkm=' . $record->id
+                                    : '/admin/umkm-designs/create?umkm=' . $record->id
+                                ),
+                        ])->columnSpanFull(),
+                    ]),
             ] ),
         ] )
 

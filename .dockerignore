@@ -1,0 +1,13 @@
+.git
+node_modules
+vendor
+bootstrap/cache
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+tests
+PHASES
+WORKPLAN.md
+_ide_helper.php
+_ide_helper_models.php

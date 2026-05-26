@@ -2,14 +2,53 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $umkm_id
+ * @property int $designer_id
+ * @property string $file_path
+ * @property string|null $gerobak_depan
+ * @property string|null $gerobak_kiri
+ * @property string|null $gerobak_kanan
+ * @property string $status
+ * @property string|null $catatan_revisi
+ * @property int $versi
+ * @property \Illuminate\Support\Carbon|null $approved_at
+ * @property int|null $approved_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\User|null $approvedBy
+ * @property-read \App\Models\User $designer
+ * @property-read \App\Models\Umkm $umkm
+ * @method static Builder<static>|UmkmDesign newModelQuery()
+ * @method static Builder<static>|UmkmDesign newQuery()
+ * @method static Builder<static>|UmkmDesign query()
+ * @method static Builder<static>|UmkmDesign whereApprovedAt($value)
+ * @method static Builder<static>|UmkmDesign whereApprovedBy($value)
+ * @method static Builder<static>|UmkmDesign whereCatatanRevisi($value)
+ * @method static Builder<static>|UmkmDesign whereCreatedAt($value)
+ * @method static Builder<static>|UmkmDesign whereDesignerId($value)
+ * @method static Builder<static>|UmkmDesign whereFilePath($value)
+ * @method static Builder<static>|UmkmDesign whereGerobakDepan($value)
+ * @method static Builder<static>|UmkmDesign whereGerobakKanan($value)
+ * @method static Builder<static>|UmkmDesign whereGerobakKiri($value)
+ * @method static Builder<static>|UmkmDesign whereId($value)
+ * @method static Builder<static>|UmkmDesign whereStatus($value)
+ * @method static Builder<static>|UmkmDesign whereUmkmId($value)
+ * @method static Builder<static>|UmkmDesign whereUpdatedAt($value)
+ * @method static Builder<static>|UmkmDesign whereVersi($value)
+ * @mixin \Eloquent
+ */
 class UmkmDesign extends Model
 {
     protected $fillable = [
         'umkm_id',
         'designer_id',
+        'nama_desainer',
         'file_path',
         'status',
         'catatan_revisi',
@@ -24,10 +63,7 @@ class UmkmDesign extends Model
     protected $casts = [
         'approved_at' => 'datetime',
     ];
-    
-// =====================================================================
-// Relasi Eloquent
-// =====================================================================
+
     public function umkm(): BelongsTo
     {
         return $this->belongsTo(Umkm::class);
@@ -42,34 +78,4 @@ class UmkmDesign extends Model
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
-    
-    protected static function booted()
-{
-    static::updated(function ($umkmDesign) {
-        // Cek jika status berubah menjadi 'revised' (sudah direvisi oleh desainer)
-        if ($umkmDesign->isDirty('status') && $umkmDesign->status === 'revised') {
-            
-            $namaUsaha = $umkmDesign->umkm?->nama_usaha ?? 'UMKM';
-
-            // Tentukan target user_id yang akan menerima notifikasi ini.
-            // Sesuai gambar databasemu, id 5 atau 1 biasanya untuk reviewer/admin.
-            // Kamu bisa pakai auth()->id() atau id spesifik penerima, contoh: 5
-            $targetUserId = 5; 
-
-            // Simpan langsung ke tabel notifikasis dengan field lengkap sesuai database kamu
-            \App\Models\Notifikasi::create([
-                'user_id'         => $targetUserId,
-                'judul'           => 'Desain Telah Direvisi 🎨',
-                'pesan'           => "Tim Desain telah memperbaiki desain untuk {$namaUsaha}. Silakan cek kembali untuk di-review.",
-                'tipe'            => 'revised', // Sesuai kolom tipe varchar(255) di databasemu
-                
-                // MENGISI FIELD POLYMORPHIC YANG RELEVAN AGAR TIDAK ERROR GENERAL 1364
-                'notifiable_type' => 'App\Models\UmkmDesign', 
-                'notifiable_id'   => $umkmDesign->id,
-                
-                'is_read'         => 0, // Set default belum dibaca sesuai struktur databasemu
-            ]);
-        }
-    });
-}
 }

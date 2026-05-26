@@ -18,74 +18,61 @@ class UmkmDesignResource extends Resource
     protected static ?string $model = UmkmDesign::class;
     protected static ?string $navigationIcon = 'heroicon-o-paint-brush';
     protected static ?string $navigationGroup = 'Data UMKM';
-    protected static ?string $label = 'Design UMKM';
-    protected static ?string $pluralLabel = 'Design UMKM';
+    protected static ?string $label = 'History UMKM';
+    protected static ?string $pluralLabel = 'History UMKM';
+    protected static ?string $navigationLabel = 'History UMKM';
 
-    // akses role design, client, admin
     public static function canAccess(): bool
     {
         return in_array(auth()->user()?->role, ['design', 'client', 'admin']);
     }
 
-    // ====================================================================
-    // DATA FILTER: Khusus Akun Design Hanya Bisa Melihat Data Sendiri
-    // ====================================================================
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         $query = parent::getEloquentQuery();
         $user = auth()->user();
 
-        // Jika user yang login memiliki role 'design', batasi datanya murni miliknya saja
         if ($user?->role === 'design') {
             $query->where('designer_id', $user->id);
         }
 
-        // Jika role-nya Admin, PIC Lapangan, atau Client, mereka tetap bisa melihat seluruh data
         return $query;
     }
 
-    // ====================================================================
-    // Badge notifikasi
-    // ====================================================================
-public static function getNavigationBadge(): ?string
-{
-    $user = auth()->user(); 
+    public static function getNavigationBadge(): ?string
+    {
+        $user = auth()->user();
 
-    if ($user?->role === 'design') {
-        // Designer: yang perlu dia kerjakan = pending tidak relevan untuknya,
-        // yang relevan adalah revision_needed (harus diperbaiki)
-        $count = UmkmDesign::where('status', 'revision_needed')->count();
-    } else {
-        // Reviewer (client/pic_lapangan): yang harus di-review
-        $count = UmkmDesign::whereIn('status', ['pending', 'revised'])->count();
+        if ($user?->role === 'design') {
+            $count = UmkmDesign::where('status', 'revision_needed')
+                ->where('designer_id', $user->id)
+                ->count();
+        } else {
+            $count = UmkmDesign::whereIn('status', ['pending', 'revised'])->count();
+        }
+
+        return $count > 0 ? (string) $count : null;
     }
 
-    return $count > 0 ? (string) $count : null;
-}
+    public static function getNavigationBadgeColor(): ?string
+    {
+        $user = auth()->user();
+        if (!$user) return null;
 
-// ====================================================================
-// Tooltip untuk badge notifikasi
-// ====================================================================
-public static function getNavigationBadgeColor(): ?string
-{
-    $user = auth()->user(); 
-    if (!$user) return null;
-
-    if ($user->role === 'design') {
-        // DIUBAH: Tambahkan ->where('designer_id', $user->id) agar angka badge sesuai history miliknya sendiri
-        $count = UmkmDesign::where('status', 'revision_needed')
-            ->where('designer_id', $user->id)
-            ->count();
-    } else {
-        $count = UmkmDesign::whereIn('status', ['pending', 'revised'])->count();
+        if ($user->role === 'design') {
+            $count = UmkmDesign::where('status', 'revision_needed')
+                ->where('designer_id', $user->id)
+                ->count();
+            return $count > 0 ? 'danger' : null;
+        } else {
+            $hasRevised = UmkmDesign::where('status', 'revised')->exists();
+            if ($hasRevised) return 'warning';
+            $hasPending = UmkmDesign::where('status', 'pending')->exists();
+            if ($hasPending) return 'warning';
+            return null;
+        }
     }
 
-    return $count > 0 ? (string) $count : null;
-}
-
-// ====================================================================
-// Warna badge notifikasi
-// ====================================================================
     public static function getNavigationBadgeTooltip(): ?string
     {
         return 'Design menunggu review';
@@ -103,41 +90,34 @@ public static function getNavigationBadgeColor(): ?string
 
     public static function form(Form $form): Form
     {
-
         return $form
             ->schema([
                 Forms\Components\Section::make('Upload Design')
                     ->schema([
+                        Forms\Components\Select::make('kota_id')
+                            ->label('Filter Kota')
+                            ->placeholder('Pilih kota terlebih dahulu')
+                            ->options(\App\Models\Kota::orderBy('nama')->pluck('nama', 'id'))
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->dehydrated(false)
+                            ->afterStateUpdated(fn (Forms\Set $set) => $set('umkm_id', null))
+                            ->afterStateHydrated(function (Forms\Set $set, ?\App\Models\UmkmDesign $record) {
+                                if ($record && $record->umkm) {
+                                    $set('kota_id', $record->umkm->kota_id);
+                                    return;
+                                }
 
-                    // ========== FILTER KOTA (helper, tidak disimpan ke DB) ==========
-Forms\Components\Select::make('kota_id')
-    ->label('Filter Kota')
-    ->placeholder('Pilih kota terlebih dahulu')
-    ->options(\App\Models\Kota::orderBy('nama')->pluck('nama', 'id'))
-    ->searchable()
-    ->preload()
-    ->live()
-    ->dehydrated(false) // TIDAK disimpan ke tabel umkm_designs
-    ->afterStateUpdated(fn (Forms\Set $set) => $set('umkm_id', null))
-    ->afterStateHydrated(function (Forms\Set $set, ?\App\Models\UmkmDesign $record) {
-        // 1. KONDISI EDIT: Auto-isi kota saat edit data yang sudah ada
-        if ($record && $record->umkm) {
-            $set('kota_id', $record->umkm->kota_id);
-            return; // hentikan eksekusi jika sudah dalam mode edit
-        }
+                                $umkmIdFromUrl = request()->query('umkm');
+                                if ($umkmIdFromUrl) {
+                                    $umkm = \App\Models\Umkm::find($umkmIdFromUrl);
+                                    if ($umkm && $umkm->kota_id) {
+                                        $set('kota_id', $umkm->kota_id);
+                                    }
+                                }
+                            }),
 
-        // 2. KONDISI CREATE (DARI NOTIFIKASI): Ambil parameter 'umkm' dari URL
-        $umkmIdFromUrl = request()->query('umkm');
-        if ($umkmIdFromUrl) {
-            $umkm = \App\Models\Umkm::find($umkmIdFromUrl);
-            if ($umkm && $umkm->kota_id) {
-                // Set otomatis kota si UMKM tersebut ke dropdown filter kota ini
-                $set('kota_id', $umkm->kota_id);
-            }
-        }
-    }),
-
-                        // ========== UMKM (dependent ke kota_id) ==========
                         Forms\Components\Select::make('umkm_id')
                             ->label('UMKM')
                             ->relationship('umkm', 'nama_usaha')
@@ -146,12 +126,9 @@ Forms\Components\Select::make('kota_id')
                             )
                             ->options(function (Forms\Get $get) {
                                 $kotaId = $get('kota_id');
+                                if (!$kotaId) return [];
 
-                                if (! $kotaId) {
-                                    return [];
-                                }
-
-                                return Umkm::where('status', 'approved')
+                                return Umkm::whereIn('status', ['approved', 'menunggu_didesain'])
                                     ->where('kota_id', $kotaId)
                                     ->get()
                                     ->mapWithKeys(fn ($umkm) => [
@@ -161,41 +138,49 @@ Forms\Components\Select::make('kota_id')
                             ->searchable()
                             ->preload()
                             ->required()
-    // ====================================================================
-    //  VALIDASI: Mencegah Penginputan Ganda untuk UMKM yang Sama
-    // ====================================================================
-    ->unique(
-        table: 'umkm_designs',     // Nama tabel database Anda
-        column: 'umkm_id',          // Nama kolom yang harus unik di tabel tersebut
-        ignorable: fn ($record) => $record // Mengabaikan id data ini sendiri sewaktu Edit Mode
-    )
-    // Custom pesan error agar informatif bagi Team Design
-    ->validationMessages([
-        'unique' => 'UMKM ini sudah memiliki data desain. Mohon pilih UMKM lain atau edit data yang sudah ada.',
-    ])
+                            ->unique(
+                                table: 'umkm_designs',
+                                column: 'umkm_id',
+                                ignorable: fn ($record) => $record,
+                                modifyRuleUsing: function (\Illuminate\Validation\Rules\Unique $rule, Forms\Get $get) {
+                                    return $rule->where(function ($query) {
+                                        $query->where('status', '!=', 'revision_needed');
+                                    });
+                                }
+                            )
+                            ->validationMessages([
+                                'unique' => 'UMKM ini sudah memiliki data desain. Mohon pilih UMKM lain atau edit data yang sudah ada.',
+                            ])
                             ->default(request()->query('umkm'))
-                            ->disabled(fn (Forms\Get $get) => ! $get('kota_id'))
+                            ->disabled(fn (Forms\Get $get) => !$get('kota_id'))
                             ->live(),
 
                         Forms\Components\FileUpload::make('file_path')
-                            ->label('File Design final')
-                            ->directory('umkm-designs')    ->required(),
+                            ->label('Upload Flat Mockup / Final Artwork Design (Wajib 1 Gambar)')
+                            ->directory(fn (Forms\Get $get) => 'umkm/' . (Umkm::find($get('umkm_id'))?->kota_id ?: 'temp') . '/design')
+                            ->required(),
+
+                        Forms\Components\TextInput::make('nama_desainer')
+                            ->label('Nama Desainer')
+                            ->placeholder('Nama desainer untuk identifikasi client')
+                            ->required()
+                            ->columnSpanFull(),
 
                         Forms\Components\FileUpload::make('gerobak_depan')
-                            ->label('File mockup Design Gerobak Depan')
-                            ->directory('umkm-designs')
+                            ->label('Mockup Design Gerobak Depan (Wajib)')
+                            ->directory(fn (Forms\Get $get) => 'umkm/' . (Umkm::find($get('umkm_id'))?->kota_id ?: 'temp') . '/design')
                             ->image()
                             ->required(),
 
                         Forms\Components\FileUpload::make('gerobak_kiri')
-                            ->label('File mockup Design Gerobak Kiri')
-                            ->directory('umkm-designs')
+                            ->label('Mockup Design Gerobak Kiri (Wajib)')
+                            ->directory(fn (Forms\Get $get) => 'umkm/' . (Umkm::find($get('umkm_id'))?->kota_id ?: 'temp') . '/design')
                             ->image()
                             ->required(),
 
                         Forms\Components\FileUpload::make('gerobak_kanan')
-                            ->label('File mockup Design Gerobak Kanan')
-                            ->directory('umkm-designs')
+                            ->label('Mockup Design Gerobak Kanan (Wajib)')
+                            ->directory(fn (Forms\Get $get) => 'umkm/' . (Umkm::find($get('umkm_id'))?->kota_id ?: 'temp') . '/design')
                             ->image()
                             ->required(),
 
@@ -205,7 +190,7 @@ Forms\Components\Select::make('kota_id')
                         Forms\Components\Hidden::make('versi')
                             ->default(function (Forms\Get $get) {
                                 $umkmId = $get('umkm_id');
-                                if (! $umkmId) return 1;
+                                if (!$umkmId) return 1;
 
                                 $lastVersion = UmkmDesign::where('umkm_id', $umkmId)->max('versi');
                                 return ($lastVersion ?? 0) + 1;
@@ -231,20 +216,22 @@ Forms\Components\Select::make('kota_id')
                     ->badge(),
                 Tables\Columns\TextColumn::make('designer.name')
                     ->label('Designer'),
-              Tables\Columns\BadgeColumn::make('status')
-    ->colors([
-        'warning' => 'pending',
-        'success' => 'approved',
-        'danger'  => 'revision_needed',
-        'info'    => 'revised',        // ← TAMBAH (warna biru)
-    ])
-    ->formatStateUsing(fn (string $state): string => match ($state) {
-        'pending'         => 'Pending',
-        'approved'        => 'Approved',
-        'revision_needed' => 'Perlu Revisi',
-        'revised'         => 'Sudah Direvisi',
-        default           => ucfirst($state),
-    }),
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'approved' => 'success',
+                        'revision_needed' => 'danger',
+                        'revised' => 'info',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'pending' => 'Pending',
+                        'approved' => 'Approved',
+                        'revision_needed' => 'Perlu Revisi',
+                        'revised' => 'Sudah Direvisi',
+                        default => ucfirst($state),
+                    }),
                 Tables\Columns\TextColumn::make('catatan_revisi')
                     ->label('Catatan')
                     ->limit(30)
@@ -254,75 +241,64 @@ Forms\Components\Select::make('kota_id')
                     ->dateTime('d M Y'),
             ])
             ->filters([
-                // ========== FILTER KOTA DI TABLE ==========
                 Tables\Filters\SelectFilter::make('kota_id')
                     ->label('Kota')
                     ->options(Kota::orderBy('nama')->pluck('nama', 'id'))
                     ->query(function ($query, array $data) {
-                        if (! empty($data['value'])) {
+                        if (!empty($data['value'])) {
                             $query->whereHas('umkm', fn ($q) => $q->where('kota_id', $data['value']));
                         }
                     })
                     ->searchable()
                     ->preload(),
 
-            Tables\Filters\SelectFilter::make('status')
-    ->options([
-        'pending'         => 'Pending',
-        'approved'        => 'Approved',
-        'revision_needed' => 'Perlu Revisi',
-        'revised'         => 'Sudah Direvisi',   // ← TAMBAH
-    ]),
+                Tables\Filters\SelectFilter::make('status')
+                    ->options([
+                        'pending' => 'Pending',
+                        'approved' => 'Approved',
+                        'revision_needed' => 'Perlu Revisi',
+                        'revised' => 'Sudah Direvisi',
+                    ]),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
 
-               Tables\Actions\EditAction::make()
-    ->visible(fn () => auth()->user()?->isDesign())
-    ->mutateFormDataUsing(function (array $data): array {
-        // Auto ubah status jadi "revised" saat designer save perubahan
-        $data['status'] = 'revised';
-        return $data;
-    })
-    ->successNotificationTitle('Design berhasil direvisi & dikirim ke client untuk review ulang'),
+                Tables\Actions\EditAction::make()
+                    ->visible(fn () => auth()->user()?->isDesign())
+                    ->mutateFormDataUsing(function (array $data): array {
+                        $data['status'] = 'revised';
+                        return $data;
+                    })
+                    ->after(function (UmkmDesign $record) {
+                        if ($record->umkm) {
+                            $record->umkm->update(['status' => Umkm::STATUS_DESIGN_REVIEW]);
+                        }
+                    })
+                    ->successNotificationTitle('Design berhasil direvisi & dikirim ke client untuk review ulang'),
 
                 Tables\Actions\DeleteAction::make()
                     ->visible(fn () => auth()->user()?->isDesign()),
 
-                // Approve Design
                 Tables\Actions\Action::make('approve')
                     ->label('Approve')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                        ->visible(fn (UmkmDesign $record) =>
-        in_array($record->status, ['pending', 'revised']) &&  // ← TAMBAH 'revised'
-        (auth()->user()->isPicLapangan() || auth()->user()->isClient())
-    )
+                    ->visible(fn (UmkmDesign $record) =>
+                        in_array($record->status, ['pending', 'revised']) &&
+                        auth()->user()->isClient()
+                    )
                     ->action(function (UmkmDesign $record) {
+                        // Observer UmkmDesignObserver::updated() handles UMKM status + notifications
                         $record->update([
-                            'status'      => 'approved',
+                            'status' => 'approved',
                             'approved_at' => now(),
                             'approved_by' => auth()->id(),
                         ]);
-
-                        if ($record->umkm) {
-                            $record->umkm->update([
-                                'design_final'         => $record->file_path,
-                                'design_gerobak_depan' => $record->gerobak_depan,
-                                'design_gerobak_kiri'  => $record->gerobak_kiri,
-                                'design_gerobak_kanan' => $record->gerobak_kanan,
-                            ]);
-                        }
-
                         \Filament\Notifications\Notification::make()
-                            ->title('Design disetujui ✅')
-                            ->body('4 file design telah otomatis tersalin ke data UMKM.')
-                            ->success()
-                            ->send();
+                            ->title('Design disetujui ✅')->success()->send();
                     }),
 
-                // Request Revision
                 Tables\Actions\Action::make('revisi')
                     ->label('Minta Revisi')
                     ->icon('heroicon-o-pencil')
@@ -333,14 +309,20 @@ Forms\Components\Select::make('kota_id')
                             ->required(),
                     ])
                     ->visible(fn (UmkmDesign $record) =>
-        in_array($record->status, ['pending', 'revised']) &&  // ← TAMBAH 'revised'
-        (auth()->user()->isPicLapangan() || auth()->user()->isClient())
-    )
+                        in_array($record->status, ['pending', 'revised']) &&
+                        auth()->user()->isClient()
+                    )
                     ->action(function (UmkmDesign $record, array $data) {
                         $record->update([
-                            'status'         => 'revision_needed',
+                            'status' => 'revision_needed',
                             'catatan_revisi' => $data['catatan_revisi'],
                         ]);
+
+                        if ($record->umkm) {
+                            $record->umkm->update([
+                                'status' => Umkm::STATUS_REVISION_NEEDED,
+                            ]);
+                        }
                     }),
             ])
             ->bulkActions([
@@ -351,13 +333,10 @@ Forms\Components\Select::make('kota_id')
             ]);
     }
 
-    // ... Batas akhir method form() kamu ...
-
     public static function infolist(\Filament\Infolists\Infolist $infolist): \Filament\Infolists\Infolist
     {
         return $infolist
             ->schema([
-                // PANGGIL MODAL POPUP DI SINI (Selalu stanby di halaman detail view)
                 \Filament\Infolists\Components\ViewEntry::make('image_lightbox')
                     ->view('filament.infolists.components.image-lightbox')
                     ->columnSpanFull(),
@@ -419,16 +398,17 @@ Forms\Components\Select::make('kota_id')
                                 'x-on:click' => '$dispatch("open-preview-modal", { src: "' . asset('storage/' . $record->gerobak_kanan) . '" })',
                             ]),
                     ])->columns(2),
+
             ]);
     }
-
 
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListUmkmDesigns::route('/'),
+            'index' => Pages\ListUmkmDesigns::route('/'),
             'create' => Pages\CreateUmkmDesign::route('/create'),
-              'edit'   => Pages\EditUmkmDesign::route('/{record}/edit'),
+            'view' => Pages\ViewUmkmDesign::route('/{record}'),
+            'edit' => Pages\EditUmkmDesign::route('/{record}/edit'),
         ];
     }
 }

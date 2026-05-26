@@ -60,25 +60,19 @@ class UserResource extends Resource {
                     'team_pasang' => 'Team Pasang',
                 ] )
                 ->required(),
-                Forms\Components\Select::make('kota_id')
-    ->label('Kota')
-    ->options(Kota::pluck('nama', 'id'))
+                Forms\Components\Select::make( 'kota_id' )
+                ->label( 'Kota' )
+                ->options( Kota::pluck( 'nama', 'id' ) )
     ->searchable()
     ->preload()
     ->native(false)
     ->createOptionForm([
-        Forms\Components\TextInput::make('nama') 
+        Forms\Components\TextInput::make('name')
             ->label('Kota Baru')
             ->required(),
     ])
     ->createOptionUsing(function (array $data) {
-        // Simpan ke database
-        $kota = Kota::create([
-            'nama' => $data['nama'], // Sesuaikan key dengan field di createOptionForm
-        ]);
-
-        // Kembalikan ID-nya agar Select otomatis terisi
-        return $kota->id;
+        return Kota::create(['nama' => $data['name']])->id;
     }),
                 Forms\Components\Toggle::make( 'is_active' )
                 ->label( 'Aktif' )
@@ -95,13 +89,16 @@ class UserResource extends Resource {
             ->searchable(),
             Tables\Columns\TextColumn::make( 'email' )
             ->searchable(),
-            Tables\Columns\BadgeColumn::make( 'role' )
-            ->colors( [
-                'danger' => 'admin',
-                'warning' => 'client',
-                'success' => 'design',
-                'primary' => 'pic_lapangan',
-            ] ),
+            Tables\Columns\TextColumn::make('role')
+            ->badge()
+            ->color(fn (string $state): string => match ($state) {
+                'admin' => 'danger',
+                'client' => 'warning',
+                'design' => 'success',
+                'pic_lapangan' => 'primary',
+                'team_pasang' => 'info',
+                default => 'gray',
+            }),
             Tables\Columns\TextColumn::make( 'kota.nama' )
             ->label( 'Kota' ),
             Tables\Columns\IconColumn::make( 'is_active' )
@@ -118,6 +115,7 @@ class UserResource extends Resource {
                 'client' => 'Client',
                 'design' => 'Team Design',
                 'pic_lapangan' => 'PIC Lapangan',
+                'team_pasang' => 'Team Pasang',
             ] ),
             Tables\Filters\SelectFilter::make( 'kota_id' )
             ->label( 'Kota' )

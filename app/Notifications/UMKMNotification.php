@@ -23,8 +23,8 @@ class UMKMNotification extends Notification implements ShouldQueue
 
     public function via($notifiable) 
     { 
-        // Mengirim ke database internal Filament dan ke Email
-        return ['mail', 'database']; 
+        // Hanya kirim via email, tidak via database (tabel notifications tidak digunakan)
+        return ['mail']; 
     }
 
     public function toMail($notifiable)

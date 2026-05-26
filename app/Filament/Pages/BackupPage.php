@@ -2,16 +2,18 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\Kota;
+use App\Models\Umkm;
+use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Response;
-use Filament\Notifications\Notification;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Form;
-use Filament\Forms\Components\Radio;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Section;
-use App\Models\Kota;
+use Maatwebsite\Excel\Facades\Excel;
 use ZipArchive;
 
 class BackupPage extends Page implements HasForms
@@ -25,7 +27,6 @@ class BackupPage extends Page implements HasForms
 
     protected static string $view = 'filament.pages.backup-page';
 
-    // State form
     public ?array $data = [];
 
     public static function shouldRegisterNavigation(): bool
@@ -39,13 +40,9 @@ class BackupPage extends Page implements HasForms
             abort(403);
         }
 
-        // Initialize form default state
-        $this->form->fill([
-            'backup_type' => 'all',
-        ]);
+        $this->form->fill(['backup_type' => 'all']);
     }
 
-    // Mendefinisikan Form Filter di Halaman Backup
     public function form(Form $form): Form
     {
         return $form
@@ -56,10 +53,11 @@ class BackupPage extends Page implements HasForms
                         Radio::make('backup_type')
                             ->label('Tipe Backup')
                             ->options([
-                                'all' => 'Backup Semua Data',
-                                'city' => 'Backup Parsial (Per Kota)',
+                                'all'  => 'Backup Semua Data',
+                                'city' => 'Backup Per Kota',
+                                'umkm' => 'Backup Per Nama UMKM',
                             ])
-                            ->live() // Memicu perubahan form secara realtime
+                            ->live()
                             ->required(),
 
                         Select::make('kota_id')
@@ -68,87 +66,114 @@ class BackupPage extends Page implements HasForms
                             ->options(Kota::orderBy('nama')->pluck('nama', 'id'))
                             ->searchable()
                             ->preload()
-                            // Hanya muncul jika admin memilih opsi 'city'
                             ->visible(fn ($get) => $get('backup_type') === 'city')
-                            // Wajib diisi jika tipe backup adalah per kota
                             ->required(fn ($get) => $get('backup_type') === 'city'),
+
+                        Select::make('umkm_id')
+                            ->label('Pilih UMKM')
+                            ->placeholder('Cari nama UMKM...')
+                            ->options(Umkm::orderBy('nama_usaha')->pluck('nama_usaha', 'id'))
+                            ->searchable()
+                            ->preload()
+                            ->visible(fn ($get) => $get('backup_type') === 'umkm')
+                            ->required(fn ($get) => $get('backup_type') === 'umkm'),
                     ])
             ])
             ->statePath('data');
     }
 
-    // Fungsi Utama yang dimodifikasi
     public function downloadBackup()
     {
-        // Validasi form terlebih dahulu
         $formData = $this->form->getState();
         $backupType = $formData['backup_type'];
         $kotaId = $formData['kota_id'] ?? null;
+        $umkmId = $formData['umkm_id'] ?? null;
 
-        $suffix = $backupType === 'city' && $kotaId ? '_kota_' . $kotaId : '_all';
-        $zipFileName = 'backup_hanzi' . $suffix . '_' . date('Y-m-d_H-i-s') . '.zip';
+        // Build query
+        $query = Umkm::with(['kota', 'submittedBy', 'umkmDesign', 'approvedBy']);
+        if ($backupType === 'city' && $kotaId) {
+            $query->where('kota_id', $kotaId);
+        } elseif ($backupType === 'umkm' && $umkmId) {
+            $query->where('id', $umkmId);
+        }
+        $records = $query->get();
+
+        if ($records->isEmpty()) {
+            Notification::make()->title('Tidak ada data untuk di-backup')->warning()->send();
+            return;
+        }
+
+        $suffix = match ($backupType) {
+            'city' => '_kota_' . ($records->first()->kota?->nama ?? $kotaId),
+            'umkm' => '_umkm_' . $umkmId,
+            default => '_all',
+        };
+        $zipFileName = 'backup_umkm' . $suffix . '_' . date('Y-m-d_H-i-s') . '.zip';
         $zipPath = storage_path('app/' . $zipFileName);
 
         $zip = new ZipArchive;
-        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
-            
-            // 1. Ambil File Upload di folder storage/app/public
-            $filesPath = storage_path('app/public');
-            if (file_exists($filesPath)) {
-                $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($filesPath));
-                foreach ($files as $file) {
-                    if (!$file->isDir()) {
-                        $filePath = $file->getRealPath();
-                        $relativePath = 'uploads/' . substr($filePath, strlen($filesPath) + 1);
-                        $zip->addFile($filePath, $relativePath);
-                    }
-                }
-            }
-
-            // 2. Dump Database MySQL (Sesuai Konfigurasi .env Anda)
-            $dbName = config('database.connections.mysql.database');
-            $dbUser = config('database.connections.mysql.username');
-            $dbPass = config('database.connections.mysql.password');
-            $dbHost = config('database.connections.mysql.host');
-            
-            $sqlDumpPath = storage_path('app/database_backup.sql');
-            
-            // LOGIKA KONDISIONAL MYSQLDUMP
-            if ($backupType === 'city' && $kotaId) {
-                // Trik: mem-backup tabel UMKM & Desain yang hanya berelasi dengan kota_id terpilih
-                // Silakan sesuaikan nama tabel dan foreign key milik aplikasi Anda di bawah ini
-                $command = "mysqldump --user={$dbUser} --password={$dbPass} --host={$dbHost} {$dbName} " .
-                           "--where=\"kota_id={$kotaId}\" umkms " . // Asumsi nama tabel: umkms
-                           "> {$sqlDumpPath}";
-            } else {
-                // Perintah standar full backup
-                $command = "mysqldump --user={$dbUser} --password={$dbPass} --host={$dbHost} {$dbName} > {$sqlDumpPath}";
-            }
-            
-            exec($command);
-
-            if (file_exists($sqlDumpPath)) {
-                $zip->addFile($sqlDumpPath, 'database/database_backup.sql');
-            }
-
-            $zip->close();
-
-            // Hapus file sementara setelah dimasukkan ke zip
-            if (file_exists($sqlDumpPath)) {
-                unlink($sqlDumpPath);
-            }
-
-            Notification::make()
-                ->title('Backup ' . ($backupType === 'city' ? 'Per Kota' : 'Semua') . ' Berhasil Dibuat!')
-                ->success()
-                ->send();
-
-            return Response::download($zipPath)->deleteFileAfterSend(true);
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
+            Notification::make()->title('Gagal membuat file ZIP')->danger()->send();
+            return;
         }
 
-        Notification::make()
-            ->title('Gagal membuat backup')
-            ->danger()
-            ->send();
+        $filesPath = storage_path('app/public');
+
+        foreach ($records as $umkm) {
+            $folder = "umkm_{$umkm->id}_{$umkm->nama_usaha}";
+
+            // Foto UMKM
+            $this->addFileToZip($zip, $filesPath, $umkm->foto_depan, "{$folder}/foto/");
+            $this->addFileToZip($zip, $filesPath, $umkm->foto_kanan, "{$folder}/foto/");
+            $this->addFileToZip($zip, $filesPath, $umkm->foto_kiri, "{$folder}/foto/");
+            $this->addFileToZip($zip, $filesPath, $umkm->foto_plang_alfamart, "{$folder}/foto/");
+            $this->addFileToZip($zip, $filesPath, $umkm->foto_tampak_jauh, "{$folder}/foto/");
+
+            // Video
+            $this->addFileToZip($zip, $filesPath, $umkm->video_validasi, "{$folder}/video/");
+
+            // Design
+            $this->addFileToZip($zip, $filesPath, $umkm->design_final, "{$folder}/design/");
+            $this->addFileToZip($zip, $filesPath, $umkm->design_gerobak_depan, "{$folder}/design/");
+            $this->addFileToZip($zip, $filesPath, $umkm->design_gerobak_kiri, "{$folder}/design/");
+            $this->addFileToZip($zip, $filesPath, $umkm->design_gerobak_kanan, "{$folder}/design/");
+
+            // Stiker pemasangan
+            $this->addFileToZip($zip, $filesPath, $umkm->stiker_tampak_depan, "{$folder}/pemasangan/");
+            $this->addFileToZip($zip, $filesPath, $umkm->stiker_tampak_kanan, "{$folder}/pemasangan/");
+            $this->addFileToZip($zip, $filesPath, $umkm->stiker_tampak_kiri, "{$folder}/pemasangan/");
+            $this->addFileToZip($zip, $filesPath, $umkm->foto_wide, "{$folder}/pemasangan/");
+        }
+
+        // Export Excel data
+        $excelPath = storage_path('app/backup_data.xlsx');
+        Excel::store(new \App\Exports\UmkmExport($records), 'backup_data.xlsx', 'local');
+        if (file_exists($excelPath)) {
+            $zip->addFile($excelPath, 'data/data_umkm.xlsx');
+        }
+
+        // Export JSON (raw database)
+        $jsonPath = storage_path('app/backup_data.json');
+        file_put_contents($jsonPath, $records->toJson(JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        $zip->addFile($jsonPath, 'data/data_umkm.json');
+
+        $zip->close();
+
+        // Cleanup temp files
+        @unlink($excelPath);
+        @unlink($jsonPath);
+
+        Notification::make()->title('Backup Berhasil Dibuat!')->success()->send();
+
+        return Response::download($zipPath)->deleteFileAfterSend(true);
+    }
+
+    private function addFileToZip(ZipArchive $zip, string $basePath, ?string $relativePath, string $zipFolder): void
+    {
+        if (!$relativePath) return;
+        $fullPath = $basePath . '/' . $relativePath;
+        if (file_exists($fullPath)) {
+            $zip->addFile($fullPath, $zipFolder . basename($relativePath));
+        }
     }
 }

@@ -31,7 +31,7 @@ class UmkmResource extends Resource
     protected static ?string $label = 'UMKM';
     protected static ?string $pluralLabel = 'Data UMKM';
 
-       // akses role design, client, admin
+    // akses role design, client, admin
     public static function canAccess(): bool
     {
         return in_array(auth()->user()?->role, ['design', 'pic_lapangan', 'client', 'admin']);
@@ -52,59 +52,44 @@ class UmkmResource extends Resource
     return $query;
 }
 
-    // Badge notifikasi
     public static function getNavigationBadge(): ?string
     {
+        $user = auth()->user();
+        if (!$user || !in_array($user->role, ['client', 'admin'])) return null;
+
         $count = Umkm::where('status', 'pending')->count();
         return $count > 0 ? (string) $count : null;
     }
 
-    // Warna badge
     public static function getNavigationBadgeColor(): ?string
     {
-        $count = Umkm::where('status', 'pending')->count();
-        return $count > 5 ? 'danger' : 'warning'; // Merah jika > 5, kuning jika <= 5
-    }
+        $user = auth()->user();
+        if (!$user || !in_array($user->role, ['client', 'admin'])) return null;
 
-    // Tooltip badge (opsional)
-    public static function getNavigationBadgeTooltip(): ?string
-    {
-        return 'UMKM menunggu persetujuan';
+        $count = Umkm::where('status', 'pending')->count();
+        return $count > 5 ? 'danger' : 'warning';
     }
     
 
-    //  tombol create
+//  tombol create disni yang bisa akses hanya oleh pic_lapangan
   public static function canCreate(): bool
 {
     $user = auth()->user();
     return $user && in_array($user->role, ['pic_lapangan']);
 }
-// tombol edit
 public static function canEdit($record): bool
 {
     $user = auth()->user();
-    return in_array($user->role, ['pic_lapangan']);
+    if (!$user || $user->role !== 'pic_lapangan') return false;
+    return $record->status === 'pending';
 }
 
-// tombol delete
+// tombol delete  hanya untuk pic_lapangan dan admin
 public static function canDelete($record): bool
 {
     $user = auth()->user();
     return in_array($user->role, ['admin', 'pic_lapangan']);
 }
-
-    public static function getTableQuery(): \Illuminate\Database\Eloquent\Builder
-{
-    $query = parent::getTableQuery();
-
-    // Jika user login adalah client, filter data sesuai user_id
-    if (auth()->user()->isClient()) {
-        $query->where('client_id', auth()->id());
-    }
-
-    return $query;
-}
-
 
     // Helper function untuk menghitung m2 dari W x H (cm)
     private static function calculateM2(?float $width, ?float $height): float
@@ -163,18 +148,32 @@ public static function canDelete($record): bool
                         Forms\Components\TextInput::make('no_wa')
                             ->label('No. WhatsApp')
                             ->tel()
-                             ->unique(table: Umkm::class, column: 'nama_pemilik', ignoreRecord: true)
+                             ->unique(table: Umkm::class, column: 'no_wa', ignoreRecord: true)
                             ->required(),
 
                         Forms\Components\TextInput::make('radius')
                             ->label('Radius dari Alfamart')
                             ->placeholder('Contoh:50,20...'),
 
+                        Forms\Components\TextInput::make('request_text')
+                            ->label('Teks Branding yang Diminta')
+                            ->placeholder('Contoh: Aneka Gorengan UMY')
+                            ->columnSpanFull(),
+
+                        Forms\Components\TimePicker::make('jam_buka')
+                            ->label('Jam Buka')
+                            ->seconds(false),
+
+                        Forms\Components\TimePicker::make('jam_tutup')
+                            ->label('Jam Tutup')
+                            ->seconds(false),
+
                         Forms\Components\Select::make('kota_id')
     ->label('Kota')
     ->options(Kota::pluck('nama', 'id'))
     ->searchable()
     ->preload()
+    ->required()
 
     ->createOptionAction(function ($action) {
         return $action->label('Tambah Kota');
@@ -198,7 +197,7 @@ public static function canDelete($record): bool
                     ->schema([
                         Forms\Components\TextInput::make('no_rekening')
                             ->label('No. Rekening')
-                            ->unique(table: Umkm::class, column: 'nama_pemilik', ignoreRecord: true)
+                            ->unique(table: Umkm::class, column: 'no_rekening', ignoreRecord: true)
                             ->required(),
 
                         Forms\Components\Select::make('nama_bank') // Sesuaikan dengan nama kolom di database Anda
@@ -249,81 +248,33 @@ public static function canDelete($record): bool
                 Forms\Components\Wizard\Step::make('Lokasi')
                     ->icon('heroicon-o-map-pin')
                     ->schema([
-                         // Auto-detect lokasi otomatis saat form dibuka (tanpa tombol)
-        Forms\Components\Placeholder::make('auto_location_trigger')
-            ->label('')
-            ->content(new \Illuminate\Support\HtmlString(
-                '<div 
-                    x-data="{ loading: true, success: false, error: null }"
-                    x-init="
-                        setTimeout(() => {
-                            if (navigator.geolocation) {
-                                navigator.geolocation.getCurrentPosition(
-                                    function(position) {
-                                        $wire.set(\'data.latitude\', position.coords.latitude.toFixed(8));
-                                        $wire.set(\'data.longitude\', position.coords.longitude.toFixed(8));
-                                        $wire.set(\'data.sharelock_url\', \'https://www.google.com/maps?q=\' + position.coords.latitude + \',\' + position.coords.longitude);
-                                        loading = false;
-                                        success = true;
-                                    },
-                                    function(err) {
-                                        loading = false;
-                                        if (err.code === 1) {
-                                            error = \'Izin lokasi ditolak. Silakan aktifkan GPS di browser.\';
-                                        } else if (err.code === 2) {
-                                            error = \'Lokasi tidak tersedia.\';
-                                        } else {
-                                            error = \'Timeout mengambil lokasi.\';
-                                        }
-                                    },
-                                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-                                );
-                            } else {
-                                loading = false;
-                                error = \'Browser tidak mendukung GPS\';
-                            }
-                        }, 500);
-                    "
-                >
-                    <div x-show="loading" class="flex items-center gap-2 text-primary-600 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg mb-4">
-                        <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>Mengambil lokasi otomatis...</span>
-                    </div>
-                    <div x-show="success" class="flex items-center gap-2 text-success-600 p-3 bg-success-50 dark:bg-success-900/20 rounded-lg mb-4">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span>Lokasi berhasil diambil!</span>
-                    </div>
-                    <div x-show="error" class="flex items-center gap-2 text-danger-600 p-3 bg-danger-50 dark:bg-danger-900/20 rounded-lg mb-4">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span x-text="error"></span>
-                    </div>
-                </div>'
-            ))
-            ->columnSpanFull(),
+                        // GPS — ViewField dengan Alpine inline
+                        \Filament\Forms\Components\ViewField::make('get_location')
+                            ->label('Lokasi GPS')
+                            ->view('filament.forms.components.get-location-button')
+                            ->key('gps-v3')
+                            ->columnSpanFull(),
 
         Forms\Components\Grid::make(2)
             ->schema([
                 Forms\Components\TextInput::make('latitude')
                     ->label('Latitude')
+                    ->required()
                     ->numeric()
                     ->step(0.00000001)
-                    ->placeholder('Mengambil lokasi...')
                     ->readOnly()
+                    ->placeholder('Wajib dari GPS — nyalakan lokasi')
+                    ->helperText('Koordinat otomatis dari GPS. Tidak bisa diisi manual.')
                     ->live(),
                     
                 Forms\Components\TextInput::make('longitude')
                     ->label('Longitude')
+                    ->required()
                     ->numeric()
                     ->step(0.00000001)
-                    ->placeholder('Mengambil lokasi...')
                     ->readOnly()
+                    ->placeholder('Wajib dari GPS — nyalakan lokasi')
+                    ->helperText('Koordinat otomatis dari GPS. Tidak bisa diisi manual.')
                     ->live(),
             ]),
 
@@ -331,8 +282,8 @@ public static function canDelete($record): bool
             ->label('Google Maps URL')
             ->required()
             ->url()
-            ->placeholder('Otomatis terisi...')
             ->readOnly()
+            ->placeholder('Otomatis terisi dari GPS...')
             ->columnSpanFull()
             ->suffixAction(
                 Forms\Components\Actions\Action::make('openMap')
@@ -394,221 +345,95 @@ public static function canDelete($record): bool
     </div>
 ')),
 
-        // ========== PANEL DEPAN ==========
-        Forms\Components\Section::make('Panel Depan')
+        // ========== SISI DEPAN ==========
+        Forms\Components\Section::make('Sisi Depan')
             ->description(function (Get $get): string {
-                $total = self::calculatePanelTotal($get, 'depan');
-                return "{$total} M²";
+                $atas = self::calculateM2(floatval($get('depan_atas_w')), floatval($get('depan_atas_h')));
+                $tengah = self::calculateM2(floatval($get('depan_tengah_w')), floatval($get('depan_tengah_h')));
+                $bawah = self::calculateM2(floatval($get('depan_bawah_w')), floatval($get('depan_bawah_h')));
+                return round($atas + $tengah + $bawah, 2) . ' M²';
             })
             ->schema([
-                // Bagian Atas
                 Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\Placeholder::make('depan_atas_label')
-                            ->label('')
-                            ->content('Bagian Atas'),
-                        Forms\Components\TextInput::make('depan_atas_w')
-                            ->required()
-                            ->label('W (cm)')
-                             ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('depan_atas_h')
-                            ->label('H (cm)')
-                            ->required()
-                             ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('depan_atas_label')->label('')->content('Panel Atas'),
+                        Forms\Components\TextInput::make('depan_atas_w')->required()->label('P (cm)')->placeholder('contoh: 163')->numeric()->step(1)->live(onBlur: true),
+                        Forms\Components\TextInput::make('depan_atas_h')->label('T (cm)')->required()->placeholder('contoh: 20')->numeric()->step(1)->live(onBlur: true),
                     ]),
-                Forms\Components\Hidden::make('depan_panel_atas_m2'),
-
-                // Bagian Tengah
                 Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\Placeholder::make('depan_tengah_label')
-                            ->label('')
-                            ->content('Bagian Tengah'),
-                        Forms\Components\TextInput::make('depan_tengah_w')
-                            ->label('W (cm)')
-                            ->required()
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('depan_tengah_h')
-                            ->label('H (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('depan_tengah_label')->label('')->content('Panel Tengah'),
+                        Forms\Components\TextInput::make('depan_tengah_w')->label('P (cm)')->placeholder('contoh: 100')->numeric()->step(1)->live(onBlur: true),
+                        Forms\Components\TextInput::make('depan_tengah_h')->label('T (cm)')->placeholder('contoh: 40')->numeric()->step(1)->live(onBlur: true),
                     ]),
-                Forms\Components\Hidden::make('depan_panel_tengah_m2'),
-
-                // Bagian Bawah
                 Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\Placeholder::make('depan_bawah_label')
-                            ->label('')
-                            ->content('Bagian Bawah'),
-                        Forms\Components\TextInput::make('depan_bawah_w')
-                            ->label('W (cm)')
-                            ->required()
-                             ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('depan_bawah_h')
-                            ->label('H (cm)')
-                            ->required()
-                            ->numeric()
-                            ->placeholder('contoh:100../0')
-                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('depan_bawah_label')->label('')->content('Panel Bawah'),
+                        Forms\Components\TextInput::make('depan_bawah_w')->label('P (cm)')->required()->placeholder('contoh: 163')->numeric()->step(1)->live(onBlur: true),
+                        Forms\Components\TextInput::make('depan_bawah_h')->label('T (cm)')->required()->numeric()->step(1)->placeholder('contoh: 62')->live(onBlur: true),
                     ]),
-                Forms\Components\Hidden::make('depan_panel_bawah_m2'),
             ])
             ->collapsible()
             ->extraAttributes(['class' => 'border-l-4 border-l-primary-500']),
 
-        // ========== PANEL KANAN ==========
-        Forms\Components\Section::make('Panel Kanan')
+        // ========== SISI KANAN ==========
+        Forms\Components\Section::make('Sisi Kanan')
             ->description(function (Get $get): string {
-                $total = self::calculatePanelTotal($get, 'kanan');
-                return "{$total} M²";
+                $atas = self::calculateM2(floatval($get('kanan_atas_w')), floatval($get('kanan_atas_h')));
+                $tengah = self::calculateM2(floatval($get('kanan_tengah_w')), floatval($get('kanan_tengah_h')));
+                $bawah = self::calculateM2(floatval($get('kanan_bawah_w')), floatval($get('kanan_bawah_h')));
+                return round($atas + $tengah + $bawah, 2) . ' M²';
             })
             ->schema([
-                // Bagian Atas
                 Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\Placeholder::make('kanan_atas_label')
-                            ->label('')
-                            ->content('Bagian Atas'),
-                        Forms\Components\TextInput::make('kanan_atas_w')
-                            ->label('W (cm)')
-                            ->required()
-                             ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('kanan_atas_h')
-                            ->label('H (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('kanan_atas_label')->label('')->content('Panel Atas'),
+                        Forms\Components\TextInput::make('kanan_atas_w')->label('P (cm)')->required()->placeholder('contoh: 54')->numeric()->step(1)->live(onBlur: true),
+                        Forms\Components\TextInput::make('kanan_atas_h')->label('T (cm)')->numeric()->step(1)->placeholder('contoh: 20')->required()->live(onBlur: true),
                     ]),
-                Forms\Components\Hidden::make('kanan_panel_atas_m2'),
-
-                // Bagian Tengah
                 Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\Placeholder::make('kanan_tengah_label')
-                            ->label('')
-                            ->content('Bagian Tengah'),
-                        Forms\Components\TextInput::make('kanan_tengah_w')
-                            ->label('W (cm)')
-                            ->required()
-                             ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('kanan_tengah_h')
-                            ->label('H (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('kanan_tengah_label')->label('')->content('Panel Tengah'),
+                        Forms\Components\TextInput::make('kanan_tengah_w')->label('P (cm)')->placeholder('contoh: 50')->numeric()->step(1)->live(onBlur: true),
+                        Forms\Components\TextInput::make('kanan_tengah_h')->label('T (cm)')->placeholder('contoh: 40')->numeric()->step(1)->live(onBlur: true),
                     ]),
-                Forms\Components\Hidden::make('kanan_panel_tengah_m2'),
-
-                // Bagian Bawah
                 Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\Placeholder::make('kanan_bawah_label')
-                            ->label('')
-                            ->content('Bagian Bawah'),
-                        Forms\Components\TextInput::make('kanan_bawah_w')
-                            ->label('W (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('kanan_bawah_h')
-                            ->label('H (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('kanan_bawah_label')->label('')->content('Panel Bawah'),
+                        Forms\Components\TextInput::make('kanan_bawah_w')->label('P (cm)')->numeric()->step(1)->placeholder('contoh: 49')->required()->live(onBlur: true),
+                        Forms\Components\TextInput::make('kanan_bawah_h')->label('T (cm)')->numeric()->step(1)->placeholder('contoh: 58')->required()->live(onBlur: true),
                     ]),
-                Forms\Components\Hidden::make('kanan_panel_bawah_m2'),
             ])
             ->collapsible()
             ->extraAttributes(['class' => 'border-l-4 border-l-success-500']),
 
-        // ========== PANEL KIRI ==========
-        Forms\Components\Section::make('Panel Kiri')
+        // ========== SISI KIRI ==========
+        Forms\Components\Section::make('Sisi Kiri')
             ->description(function (Get $get): string {
-                $total = self::calculatePanelTotal($get, 'kiri');
-                return "{$total} M²";
+                $atas = self::calculateM2(floatval($get('kiri_atas_w')), floatval($get('kiri_atas_h')));
+                $tengah = self::calculateM2(floatval($get('kiri_tengah_w')), floatval($get('kiri_tengah_h')));
+                $bawah = self::calculateM2(floatval($get('kiri_bawah_w')), floatval($get('kiri_bawah_h')));
+                return round($atas + $tengah + $bawah, 2) . ' M²';
             })
             ->schema([
-                // Bagian Atas
                 Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\Placeholder::make('kiri_atas_label')
-                            ->label('')
-                            ->content('Bagian Atas'),
-                        Forms\Components\TextInput::make('kiri_atas_w')
-                            ->label('W (cm)')
-                            ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->required()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('kiri_atas_h')
-                            ->label('H (cm)')
-                             ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->required()
-                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('kiri_atas_label')->label('')->content('Panel Atas'),
+                        Forms\Components\TextInput::make('kiri_atas_w')->label('P (cm)')->placeholder('contoh: 54')->numeric()->step(1)->required()->live(onBlur: true),
+                        Forms\Components\TextInput::make('kiri_atas_h')->label('T (cm)')->placeholder('contoh: 20')->numeric()->step(1)->required()->live(onBlur: true),
                     ]),
-                Forms\Components\Hidden::make('kiri_panel_atas_m2'),
-
-                // Bagian Tengah
                 Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\Placeholder::make('kiri_tengah_label')
-                            ->label('')
-                            ->content('Bagian Tengah'),
-                        Forms\Components\TextInput::make('kiri_tengah_w')
-                            ->label('W (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('kiri_tengah_h')
-                            ->label('H (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('kiri_tengah_label')->label('')->content('Panel Tengah'),
+                        Forms\Components\TextInput::make('kiri_tengah_w')->label('P (cm)')->placeholder('contoh: 50')->numeric()->step(1)->live(onBlur: true),
+                        Forms\Components\TextInput::make('kiri_tengah_h')->label('T (cm)')->placeholder('contoh: 40')->numeric()->step(1)->live(onBlur: true),
                     ]),
-                Forms\Components\Hidden::make('kiri_panel_tengah_m2'),
-
-                // Bagian Bawah
                 Forms\Components\Grid::make(3)
                     ->schema([
-                        Forms\Components\Placeholder::make('kiri_bawah_label')
-                            ->label('')
-                            ->content('Bagian Bawah'),
-                        Forms\Components\TextInput::make('kiri_bawah_w')
-                            ->label('W (cm)')
-                            ->required()
-                             ->placeholder('contoh:100../0')
-                            ->numeric()
-                            ->live(onBlur: true),
-                        Forms\Components\TextInput::make('kiri_bawah_h')
-                            ->label('H (cm)')
-                            ->numeric()
-                             ->placeholder('contoh:100../0')
-                            ->required()
-                            ->live(onBlur: true),
+                        Forms\Components\Placeholder::make('kiri_bawah_label')->label('')->content('Panel Bawah'),
+                        Forms\Components\TextInput::make('kiri_bawah_w')->label('P (cm)')->required()->placeholder('contoh: 54')->numeric()->step(1)->live(onBlur: true),
+                        Forms\Components\TextInput::make('kiri_bawah_h')->label('T (cm)')->numeric()->step(1)->placeholder('contoh: 62')->required()->live(onBlur: true),
                     ]),
-                Forms\Components\Hidden::make('kiri_panel_bawah_m2'),
             ])
             ->collapsible()
             ->extraAttributes(['class' => 'border-l-4 border-l-warning-500']),
@@ -616,9 +441,15 @@ public static function canDelete($record): bool
         Forms\Components\Placeholder::make('total_area_display')
             ->label('Total Area Branding')
             ->content(function (Get $get): \Illuminate\Support\HtmlString {
-                $depan = self::calculatePanelTotal($get, 'depan');
-                $kanan = self::calculatePanelTotal($get, 'kanan');
-                $kiri = self::calculatePanelTotal($get, 'kiri');
+                $depan = self::calculateM2(floatval($get('depan_atas_w')), floatval($get('depan_atas_h')))
+                       + self::calculateM2(floatval($get('depan_tengah_w')), floatval($get('depan_tengah_h')))
+                       + self::calculateM2(floatval($get('depan_bawah_w')), floatval($get('depan_bawah_h')));
+                $kanan = self::calculateM2(floatval($get('kanan_atas_w')), floatval($get('kanan_atas_h')))
+                       + self::calculateM2(floatval($get('kanan_tengah_w')), floatval($get('kanan_tengah_h')))
+                       + self::calculateM2(floatval($get('kanan_bawah_w')), floatval($get('kanan_bawah_h')));
+                $kiri  = self::calculateM2(floatval($get('kiri_atas_w')), floatval($get('kiri_atas_h')))
+                       + self::calculateM2(floatval($get('kiri_tengah_w')), floatval($get('kiri_tengah_h')))
+                       + self::calculateM2(floatval($get('kiri_bawah_w')), floatval($get('kiri_bawah_h')));
                 $total = round($depan + $kanan + $kiri, 2);
                 
                 if ($total >= 1.5) {
@@ -632,7 +463,32 @@ public static function canDelete($record): bool
                 }
             })
             ->columnSpanFull(),
-                    ]),
+                    ])
+                    ->afterValidation(function (Get $get) {
+                        $depan = self::calculateM2(floatval($get('depan_atas_w')), floatval($get('depan_atas_h')))
+                               + self::calculateM2(floatval($get('depan_tengah_w')), floatval($get('depan_tengah_h')))
+                               + self::calculateM2(floatval($get('depan_bawah_w')), floatval($get('depan_bawah_h')));
+                        $kanan = self::calculateM2(floatval($get('kanan_atas_w')), floatval($get('kanan_atas_h')))
+                               + self::calculateM2(floatval($get('kanan_tengah_w')), floatval($get('kanan_tengah_h')))
+                               + self::calculateM2(floatval($get('kanan_bawah_w')), floatval($get('kanan_bawah_h')));
+                        $kiri  = self::calculateM2(floatval($get('kiri_atas_w')), floatval($get('kiri_atas_h')))
+                               + self::calculateM2(floatval($get('kiri_tengah_w')), floatval($get('kiri_tengah_h')))
+                               + self::calculateM2(floatval($get('kiri_bawah_w')), floatval($get('kiri_bawah_h')));
+                        $total = round($depan + $kanan + $kiri, 2);
+
+                        if ($total < 1.5) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Tidak Dapat Melanjutkan ❌')
+                                ->body("Total area branding {$total} M² kurang dari minimum 1.5 M².")
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            throw \Illuminate\Validation\ValidationException::withMessages([
+                                'depan_atas_w' => "Total area branding {$total} M² kurang dari minimum 1.5 M².",
+                            ]);
+                        }
+                    }),
 
                 // STEP 5
                 Forms\Components\Wizard\Step::make('Foto')
@@ -649,8 +505,13 @@ Forms\Components\FileUpload::make('foto_depan')
     ->required()
     ->label('FOTO DEPAN')
     ->disk('public')
-    ->directory('umkm-fotos')
+    ->directory(fn (Forms\Get $get) => 'umkm/' . ($get('kota_id') ?: 'temp') . '/foto')
     ->image()
+    ->imageResizeMode('cover')
+    ->imageResizeTargetWidth('1200')
+    ->imageResizeTargetHeight('1200')
+    ->imageResizeUpscale(false)
+    ->maxSize(5120)
     ->visibility('public')
     ->imagePreviewHeight('200')
     ->loadingIndicatorPosition('left')
@@ -666,8 +527,13 @@ Forms\Components\FileUpload::make('foto_kanan')
     ->required()
     ->label('FOTO KANAN')
     ->disk('public')
-    ->directory('umkm-fotos')
+    ->directory(fn (Forms\Get $get) => 'umkm/' . ($get('kota_id') ?: 'temp') . '/foto')
     ->image()
+    ->imageResizeMode('cover')
+    ->imageResizeTargetWidth('1200')
+    ->imageResizeTargetHeight('1200')
+    ->imageResizeUpscale(false)
+    ->maxSize(5120)
     ->visibility('public')
     ->imagePreviewHeight('200')
     ->loadingIndicatorPosition('left')
@@ -683,8 +549,13 @@ Forms\Components\FileUpload::make('foto_kiri')
     ->required()
     ->label('FOTO KIRI')
     ->disk('public')
-    ->directory('umkm-fotos')
+    ->directory(fn (Forms\Get $get) => 'umkm/' . ($get('kota_id') ?: 'temp') . '/foto')
     ->image()
+    ->imageResizeMode('cover')
+    ->imageResizeTargetWidth('1200')
+    ->imageResizeTargetHeight('1200')
+    ->imageResizeUpscale(false)
+    ->maxSize(5120)
     ->visibility('public')
     ->imagePreviewHeight('200')
     ->loadingIndicatorPosition('left')
@@ -700,8 +571,35 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
     ->required()
     ->label('FOTO WIDE JARAK JAUH (PLANG ALFAMART)')
     ->disk('public')
-    ->directory('umkm-fotos')
+    ->directory(fn (Forms\Get $get) => 'umkm/' . ($get('kota_id') ?: 'temp') . '/foto')
     ->image()
+    ->imageResizeMode('cover')
+    ->imageResizeTargetWidth('1200')
+    ->imageResizeTargetHeight('1200')
+    ->imageResizeUpscale(false)
+    ->maxSize(5120)
+    ->visibility('public')
+    ->imagePreviewHeight('200')
+    ->loadingIndicatorPosition('left')
+    ->panelAspectRatio('2:1')
+    ->panelLayout('integrated')
+    ->removeUploadedFileButtonPosition('right')
+    ->uploadProgressIndicatorPosition('left')
+    ->openable()
+    ->downloadable()
+    ->previewable(),
+
+Forms\Components\FileUpload::make('foto_tampak_jauh')
+    ->required()
+    ->label('FOTO TAMPAK JAUH (KESELURUHAN AREA)')
+    ->disk('public')
+    ->directory(fn (Forms\Get $get) => 'umkm/' . ($get('kota_id') ?: 'temp') . '/foto')
+    ->image()
+    ->imageResizeMode('cover')
+    ->imageResizeTargetWidth('1200')
+    ->imageResizeTargetHeight('1200')
+    ->imageResizeUpscale(false)
+    ->maxSize(5120)
     ->visibility('public')
     ->imagePreviewHeight('200')
     ->loadingIndicatorPosition('left')
@@ -722,13 +620,24 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
         Forms\Components\Section::make('VIDEO VALIDASI JIKA ALFAMART TIDAK TERLIHAT ATAU TERHALANAG (OPSIONAL)')
             ->schema([
                 Forms\Components\FileUpload::make('video_validasi')
-                  ->label('UPLOAD VIDEO (MP4) max 15MB')
-                     ->maxSize(15360) // 15MB dalam KB
+                  ->label('UPLOAD VIDEO (MP4) max 2 menit / 30MB — Wajib jika Alfamart tidak terlihat di foto')
+                     ->maxSize(30720) // 30MB
                     ->disk('public')
-                    ->directory('umkm-videos')
+                    ->directory(fn (Forms\Get $get) => 'umkm/' . ($get('kota_id') ?: 'temp') . '/video')
                     ->visibility('public')
-                    ->acceptedFileTypes(['video/mp4', 'video/quicktime', 'video/x-msvideo'])
+                    ->acceptedFileTypes(['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/3gpp', 'video/3gpp2'])
+                    ->helperText('Rekam dari lokasi gerobak sampai terlihat Alfamart. Max 2 menit. Format: MP4, MOV, AVI, 3GP.')
                     ->placeholder('Klik untuk upload video'),
+            ])
+            ->collapsible(),
+
+        // Section Catatan PIC Lapangan
+        Forms\Components\Section::make('Catatan Tambahan')
+            ->schema([
+                Forms\Components\Textarea::make('catatan')
+                    ->label('Catatan PIC Lapangan')
+                    ->placeholder('Contoh: Lokasi sebelah Alfamart, area UMY')
+                    ->rows(3),
             ])
             ->collapsible(),
                     ]),
@@ -761,12 +670,32 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
                 Tables\Columns\IconColumn::make('memenuhi_kriteria')
                     ->label('Kriteria')
                     ->boolean(),
-                Tables\Columns\BadgeColumn::make('status')
-                    ->colors([
-                        'warning' => 'pending',
-                        'success' => 'approved',
-                        'danger' => 'rejected',
-                    ]),
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (string $state): string => match (true) {
+                        $state === 'pending' => 'warning',
+                        in_array($state, ['approved', 'design_approved', 'branded', 'terbranding_final', 'installation_completed']) => 'success',
+                        in_array($state, ['rejected', 'revision_needed']) => 'danger',
+                        in_array($state, ['designing', 'design_review', 'menunggu_didesain', 'revision']) => 'info',
+                        in_array($state, ['waiting_installation']) => 'primary',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'pending' => 'Pending',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                        'menunggu_didesain' => 'Menunggu Di-design',
+                        'designing' => 'Sedang Didesain',
+                        'design_review' => 'Review Design',
+                        'design_approved' => 'Design OK',
+                        'waiting_installation' => 'Waiting Installation',
+                        'revision_needed' => 'Perlu Revisi',
+                        'revision' => 'Sedang Direvisi',
+                        'installation_completed' => 'Installation Completed',
+                        'branded' => 'Terbranding',
+                        'terbranding_final' => 'UMKM Terbranding Final',
+                        default => ucfirst($state),
+                    }),
                 Tables\Columns\TextColumn::make('submittedBy.name')
                     ->label('PIC'),
                 Tables\Columns\TextColumn::make('created_at')
@@ -778,10 +707,28 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
+                        'approved_all' => 'Approved',
                         'pending' => 'Pending',
-                        'approved' => 'Approved',
                         'rejected' => 'Rejected',
-                    ]),
+                        'menunggu_didesain' => 'Menunggu Di-design',
+                        'designing' => 'Sedang Didesain',
+                        'design_review' => 'Design Menunggu Review',
+                        'design_approved' => 'Design Disetujui',
+                        'waiting_installation' => 'Waiting Installation',
+                        'revision_needed' => 'Perlu Revisi Design',
+                        'revision' => 'Sedang Direvisi',
+                        'installation_completed' => 'Installation Completed',
+                        'branded' => 'Sudah Terbranding',
+                        'terbranding_final' => 'UMKM Terbranding Final',
+                    ])
+                    ->query(function ($query, array $data) {
+                        if (empty($data['value'])) return;
+                        if ($data['value'] === 'approved_all') {
+                            $query->whereNotIn('status', ['pending', 'rejected']);
+                        } else {
+                            $query->where('status', $data['value']);
+                        }
+                    }),
                 Tables\Filters\SelectFilter::make('kota_id')
                     ->label('Kota')
                     ->options(Kota::pluck('nama', 'id')),
@@ -807,8 +754,10 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
             ])
             ->actions([
         Tables\Actions\ViewAction::make()
-    ->slideOver() // optional biar full kanan   
+    ->slideOver() // optional biar full kanan
     ->infolist([
+
+
     // Tampilkan alasan reject jika statusnya rejected
 \Filament\Infolists\Components\TextEntry::make('alasan_reject')
     ->label('Alasan Penolakan (Reject)')
@@ -854,6 +803,12 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
 
                 \Filament\Infolists\Components\TextEntry::make('kota.nama')
                     ->label('Kota'),
+
+                \Filament\Infolists\Components\TextEntry::make('jam_buka')
+                    ->label('Jam Buka'),
+
+                \Filament\Infolists\Components\TextEntry::make('jam_tutup')
+                    ->label('Jam Tutup'),
             ])
             ->columns(2),
 
@@ -994,51 +949,42 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
         !empty($record->design_gerobak_kiri) ||
         !empty($record->design_gerobak_kanan)
     ), // section hanya muncul kalau ada minimal 1 gambar
- \Filament\Infolists\Components\Actions::make([
 
-    \Filament\Infolists\Components\Actions\Action::make('approve')
-        ->label('Approve')
-        ->icon('heroicon-o-check-circle')
-        ->color('success')
-        ->visible(fn ($record) =>
-            $record->status === 'pending' &&
-            auth()->user()->isClient()
-        )
-        ->action(function ($record) {
+    // TOMBOL AKSI — wajib di bottom per PRD (tanpa nested modal)
+    \Filament\Infolists\Components\Section::make('Tindakan')
+        ->schema([
+            \Filament\Infolists\Components\Actions::make([
+                \Filament\Infolists\Components\Actions\Action::make('approve_umkm')
+                    ->label('Approve UMKM')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->action(function (Umkm $record) {
+                        $record->update([
+                            'status' => 'approved',
+                            'approved_at' => now(),
+                            'approved_by' => auth()->id(),
+                        ]);
+                        \Filament\Notifications\Notification::make()->title('UMKM Disetujui ✅')->success()->send();
+                    }),
 
-            $record->update([
-                'status' => 'approved',
-                'approved_at' => now(),
-                'approved_by' => auth()->id(),
-            ]);
+                \Filament\Infolists\Components\Actions\Action::make('reject_umkm')
+                    ->label('Reject UMKM')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->action(function (Umkm $record) {
+                        $alasan = request()->input('alasan_reject', 'Ditolak oleh client');
+                        $record->update([
+                            'status' => 'rejected',
+                            'alasan_reject' => $alasan,
+                        ]);
+                        \Filament\Notifications\Notification::make()->title('UMKM Ditolak ❌')->danger()->send();
+                    }),
+            ])->columnSpanFull(),
+        ])
+        ->visible(fn (Umkm $record) =>
+            $record->status === 'pending' && auth()->user()->isClient()
+        ),
 
-            Notification::make()
-                ->title('UMKM berhasil di approve')
-                ->success()
-                ->send();
-        }),
-
-    \Filament\Infolists\Components\Actions\Action::make('reject')
-        ->label('Reject')
-        ->icon('heroicon-o-x-circle')
-        ->color('danger')
-        ->visible(fn ($record) =>
-            $record->status === 'pending' &&
-            auth()->user()->isClient()
-        )
-        ->action(function ($record) {
-
-            $record->update([
-                'status' => 'rejected',
-            ]);
-
-            Notification::make()
-                ->title('UMKM berhasil di reject')
-                ->danger()
-                ->send();
-        }),
-
-])
     ])
     ->modalWidth('7xl'),
               Tables\Actions\EditAction::make()
@@ -1095,13 +1041,63 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
         ->label('Export Excel')
         ->icon('heroicon-o-document-arrow-down')
         ->color('success')
-        ->action(function ($livewire) {
+        ->form([
+            Forms\Components\Select::make('filter_type')
+                ->label('Filter Export')
+                ->options([
+                    'all'      => 'Semua Data (Raw Data)',
+                    'kota'     => 'Per Kota',
+                    'pic'      => 'Per PIC Lapangan',
+                    'designer' => 'Per Desainer',
+                ])
+                ->default('all')
+                ->live()
+                ->required(),
 
-            $query = $livewire->getFilteredTableQuery();
+            Forms\Components\Select::make('kota_id')
+                ->label('Pilih Kota')
+                ->options(Kota::orderBy('nama')->pluck('nama', 'id'))
+                ->searchable()
+                ->preload()
+                ->visible(fn ($get) => $get('filter_type') === 'kota')
+                ->required(fn ($get) => $get('filter_type') === 'kota'),
+
+            Forms\Components\Select::make('pic_id')
+                ->label('Pilih PIC Lapangan')
+                ->options(\App\Models\User::where('role', 'pic_lapangan')->pluck('name', 'id'))
+                ->searchable()
+                ->preload()
+                ->visible(fn ($get) => $get('filter_type') === 'pic')
+                ->required(fn ($get) => $get('filter_type') === 'pic'),
+
+            Forms\Components\Select::make('designer_id')
+                ->label('Pilih Desainer')
+                ->options(\App\Models\User::where('role', 'design')->pluck('name', 'id'))
+                ->searchable()
+                ->preload()
+                ->visible(fn ($get) => $get('filter_type') === 'designer')
+                ->required(fn ($get) => $get('filter_type') === 'designer'),
+        ])
+        ->action(function (array $data) {
+            $query = \App\Models\Umkm::with(['kota', 'submittedBy', 'umkmDesign', 'approvedBy']);
+
+            match ($data['filter_type']) {
+                'kota'     => $query->where('kota_id', $data['kota_id']),
+                'pic'      => $query->where('submitted_by', $data['pic_id']),
+                'designer' => $query->whereHas('designs', fn ($q) => $q->where('designer_id', $data['designer_id'])),
+                default    => null,
+            };
+
+            $filename = match ($data['filter_type']) {
+                'kota'     => 'export_kota_' . $data['kota_id'],
+                'pic'      => 'export_pic_' . $data['pic_id'],
+                'designer' => 'export_designer_' . $data['designer_id'],
+                default    => 'export_all',
+            };
 
             return \Maatwebsite\Excel\Facades\Excel::download(
                 new \App\Exports\UmkmExport($query->get()),
-                'umkm_terbranding_' . now()->format('Ymd_His') . '.xlsx'
+                $filename . '_' . now()->format('Ymd_His') . '.xlsx'
             );
         }),
 
@@ -1123,7 +1119,7 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
                             ->options(['' => 'Semua Kota'] + Kota::pluck('nama', 'id')->toArray()),
                     ])
                     ->action(function (array $data) {
-                        $query = Umkm::with(['kota', 'submittedBy']);
+                        $query = Umkm::with(['kota', 'submittedBy', 'umkmDesign']);
 
                         if (!empty($data['status'])) {
                             $query->where('status', $data['status']);
