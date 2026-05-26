@@ -42,8 +42,9 @@ class UmkmDesignResource extends Resource
     public static function getNavigationBadge(): ?string
     {
         $user = auth()->user();
+        if (!$user || !in_array($user->role, ['design', 'client', 'admin'])) return null;
 
-        if ($user?->role === 'design') {
+        if ($user->role === 'design') {
             $count = UmkmDesign::where('status', 'revision_needed')
                 ->where('designer_id', $user->id)
                 ->count();
@@ -57,7 +58,7 @@ class UmkmDesignResource extends Resource
     public static function getNavigationBadgeColor(): ?string
     {
         $user = auth()->user();
-        if (!$user) return null;
+        if (!$user || !in_array($user->role, ['design', 'client', 'admin'])) return null;
 
         if ($user->role === 'design') {
             $count = UmkmDesign::where('status', 'revision_needed')
