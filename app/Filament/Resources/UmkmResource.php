@@ -960,47 +960,41 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
         !empty($record->design_gerobak_kanan)
     ), // section hanya muncul kalau ada minimal 1 gambar
 
-    // TOMBOL AKSI — wajib di bottom per PRD (tanpa nested modal)
-    \Filament\Infolists\Components\Section::make('Tindakan')
-        ->schema([
-            \Filament\Infolists\Components\Actions::make([
-                \Filament\Infolists\Components\Actions\Action::make('approve_umkm')
-                    ->label('Approve UMKM')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->action(function (Umkm $record) {
-                        $record->update([
-                            'status' => 'approved',
-                            'approved_at' => now(),
-                            'approved_by' => auth()->id(),
-                        ]);
-                        \Filament\Notifications\Notification::make()->title('UMKM Disetujui ✅')->success()->send();
-                    }),
-
-                \Filament\Infolists\Components\Actions\Action::make('reject_umkm')
-                    ->label('Reject UMKM')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->form([
-                        \Filament\Forms\Components\Textarea::make('alasan_reject')
-                            ->label('Alasan Reject')
-                            ->required(),
-                    ])
-                    ->action(function (Umkm $record, array $data) {
-                        $record->update([
-                            'status' => 'rejected',
-                            'alasan_reject' => $data['alasan_reject'],
-                        ]);
-                        \Filament\Notifications\Notification::make()->title('UMKM Ditolak ❌')->danger()->send();
-                    }),
-            ])->columnSpanFull(),
-        ])
-        ->visible(fn (Umkm $record) =>
-            $record->status === 'pending' && auth()->user()->isClient()
-        ),
-
     ])
-    ->modalWidth('7xl'),
+    ->modalWidth('7xl')
+    ->extraModalFooterActions(fn (Tables\Actions\ViewAction $action): array => [
+        Tables\Actions\Action::make('approve_from_view')
+            ->label('Approve UMKM')
+            ->icon('heroicon-o-check-circle')
+            ->color('success')
+            ->requiresConfirmation()
+            ->visible(fn (Umkm $record) => $record->status === 'pending' && auth()->user()->isClient())
+            ->action(function (Umkm $record) {
+                $record->update([
+                    'status' => 'approved',
+                    'approved_at' => now(),
+                    'approved_by' => auth()->id(),
+                ]);
+                \Filament\Notifications\Notification::make()->title('UMKM Disetujui ✅')->success()->send();
+            }),
+        Tables\Actions\Action::make('reject_from_view')
+            ->label('Reject UMKM')
+            ->icon('heroicon-o-x-circle')
+            ->color('danger')
+            ->visible(fn (Umkm $record) => $record->status === 'pending' && auth()->user()->isClient())
+            ->form([
+                Forms\Components\Textarea::make('alasan_reject')
+                    ->label('Alasan Reject')
+                    ->required(),
+            ])
+            ->action(function (Umkm $record, array $data) {
+                $record->update([
+                    'status' => 'rejected',
+                    'alasan_reject' => $data['alasan_reject'],
+                ]);
+                \Filament\Notifications\Notification::make()->title('UMKM Ditolak ❌')->danger()->send();
+            }),
+    ]),
               Tables\Actions\EditAction::make()
     ->visible(fn () => in_array(auth()->user()?->role, ['pic_lapangan'])),
                 
