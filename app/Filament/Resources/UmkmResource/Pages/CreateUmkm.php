@@ -15,6 +15,24 @@ class CreateUmkm extends CreateRecord
         return false;
     }
 
+    protected function hasSkippableSteps(): bool
+    {
+        return false;
+    }
+
+    protected function getCreateFormAction(): \Filament\Actions\Action
+    {
+        return parent::getCreateFormAction()
+            ->label('Submit')
+            ->hidden();
+    }
+
+    protected function getCancelFormAction(): \Filament\Actions\Action
+    {
+        return parent::getCancelFormAction()
+            ->label('Cancel');
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         // total_area_branding belum dihitung saat ini (dihitung di model saving event)

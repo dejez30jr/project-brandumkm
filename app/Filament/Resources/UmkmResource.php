@@ -149,11 +149,14 @@ public static function canDelete($record): bool
                             ->label('No. WhatsApp')
                             ->tel()
                              ->unique(table: Umkm::class, column: 'no_wa', ignoreRecord: true)
-                            ->required(),
+                            ->required()
+                            ->live(onBlur: true),
 
                         Forms\Components\TextInput::make('radius')
                             ->label('Radius dari Alfamart')
-                            ->placeholder('Contoh:50,20...'),
+                            ->placeholder('Contoh: 50')
+                            ->suffix('Meter')
+                            ->numeric(),
 
                         Forms\Components\TextInput::make('request_text')
                             ->label('Teks Branding yang Diminta')
@@ -198,7 +201,8 @@ public static function canDelete($record): bool
                         Forms\Components\TextInput::make('no_rekening')
                             ->label('No. Rekening')
                             ->unique(table: Umkm::class, column: 'no_rekening', ignoreRecord: true)
-                            ->required(),
+                            ->required()
+                            ->live(onBlur: true),
 
                         Forms\Components\Select::make('nama_bank') // Sesuaikan dengan nama kolom di database Anda
     ->label('Pilih Bank')
@@ -645,7 +649,8 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
             ])
             ->columnSpanFull()
             ->persistStepInQueryString()
-            ->skippable(false),
+            ->skippable(false)
+            ->submitAction(new \Illuminate\Support\HtmlString('<button type="submit" class="fi-btn fi-btn-size-md relative grid-flow-col items-center justify-center font-semibold outline-none transition duration-75 focus-visible:ring-2 rounded-lg fi-color-custom fi-btn-color-primary fi-color-primary fi-size-md fi-btn-size-md gap-1.5 px-3 py-2 text-sm inline-grid shadow-sm bg-custom-600 text-white hover:bg-custom-500 focus-visible:ring-custom-500/50 dark:bg-custom-500 dark:hover:bg-custom-400 dark:focus-visible:ring-custom-400/50" style="--c-400:var(--primary-400);--c-500:var(--primary-500);--c-600:var(--primary-600);">Submit</button>')),
 
         ]);
 }
@@ -799,16 +804,21 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
                     ->label('No WhatsApp'),
 
                 \Filament\Infolists\Components\TextEntry::make('radius')
-                    ->label('Radius Alfamart'),
+                    ->label('Radius Alfamart')
+                    ->suffix(' Meter'),
 
                 \Filament\Infolists\Components\TextEntry::make('kota.nama')
                     ->label('Kota'),
 
                 \Filament\Infolists\Components\TextEntry::make('jam_buka')
-                    ->label('Jam Buka'),
+                    ->label('Jam Buka')
+                    ->formatStateUsing(fn ($state) => $state ? \Carbon\Carbon::parse($state)->format('H:i') : '-')
+                    ->placeholder('-'),
 
                 \Filament\Infolists\Components\TextEntry::make('jam_tutup')
-                    ->label('Jam Tutup'),
+                    ->label('Jam Tutup')
+                    ->formatStateUsing(fn ($state) => $state ? \Carbon\Carbon::parse($state)->format('H:i') : '-')
+                    ->placeholder('-'),
             ])
             ->columns(2),
 
@@ -950,43 +960,41 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
         !empty($record->design_gerobak_kanan)
     ), // section hanya muncul kalau ada minimal 1 gambar
 
-    // TOMBOL AKSI — wajib di bottom per PRD (tanpa nested modal)
-    \Filament\Infolists\Components\Section::make('Tindakan')
-        ->schema([
-            \Filament\Infolists\Components\Actions::make([
-                \Filament\Infolists\Components\Actions\Action::make('approve_umkm')
-                    ->label('Approve UMKM')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->action(function (Umkm $record) {
-                        $record->update([
-                            'status' => 'approved',
-                            'approved_at' => now(),
-                            'approved_by' => auth()->id(),
-                        ]);
-                        \Filament\Notifications\Notification::make()->title('UMKM Disetujui ✅')->success()->send();
-                    }),
-
-                \Filament\Infolists\Components\Actions\Action::make('reject_umkm')
-                    ->label('Reject UMKM')
-                    ->icon('heroicon-o-x-circle')
-                    ->color('danger')
-                    ->action(function (Umkm $record) {
-                        $alasan = request()->input('alasan_reject', 'Ditolak oleh client');
-                        $record->update([
-                            'status' => 'rejected',
-                            'alasan_reject' => $alasan,
-                        ]);
-                        \Filament\Notifications\Notification::make()->title('UMKM Ditolak ❌')->danger()->send();
-                    }),
-            ])->columnSpanFull(),
-        ])
-        ->visible(fn (Umkm $record) =>
-            $record->status === 'pending' && auth()->user()->isClient()
-        ),
-
     ])
-    ->modalWidth('7xl'),
+    ->modalWidth('7xl')
+    ->extraModalFooterActions(fn (Tables\Actions\ViewAction $action): array => [
+        Tables\Actions\Action::make('approve_from_view')
+            ->label('Approve UMKM')
+            ->icon('heroicon-o-check-circle')
+            ->color('success')
+            ->requiresConfirmation()
+            ->visible(fn (Umkm $record) => $record->status === 'pending' && auth()->user()->isClient())
+            ->action(function (Umkm $record) {
+                $record->update([
+                    'status' => 'approved',
+                    'approved_at' => now(),
+                    'approved_by' => auth()->id(),
+                ]);
+                \Filament\Notifications\Notification::make()->title('UMKM Disetujui ✅')->success()->send();
+            }),
+        Tables\Actions\Action::make('reject_from_view')
+            ->label('Reject UMKM')
+            ->icon('heroicon-o-x-circle')
+            ->color('danger')
+            ->visible(fn (Umkm $record) => $record->status === 'pending' && auth()->user()->isClient())
+            ->form([
+                Forms\Components\Textarea::make('alasan_reject')
+                    ->label('Alasan Reject')
+                    ->required(),
+            ])
+            ->action(function (Umkm $record, array $data) {
+                $record->update([
+                    'status' => 'rejected',
+                    'alasan_reject' => $data['alasan_reject'],
+                ]);
+                \Filament\Notifications\Notification::make()->title('UMKM Ditolak ❌')->danger()->send();
+            }),
+    ]),
               Tables\Actions\EditAction::make()
     ->visible(fn () => in_array(auth()->user()?->role, ['pic_lapangan'])),
                 

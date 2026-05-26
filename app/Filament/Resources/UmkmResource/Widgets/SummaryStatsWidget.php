@@ -92,7 +92,7 @@ class SummaryStatsWidget extends BaseWidget
         }
 
         if (in_array($userRole, ['pic_lapangan'])) {
-            $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Create Data UMKM</span>'), 'Tambah')
+            $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Create Data UMKM</span>'), 'Add New')
                 ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Tambah data UMKM</span>'))
                 ->descriptionIcon('heroicon-m-building-storefront')
                 ->color('primary')
@@ -105,7 +105,7 @@ class SummaryStatsWidget extends BaseWidget
         }
 
         if (in_array($userRole, ['design'])) {
-            $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Create Design UMKM</span>'), 'Tambah')
+            $stats[] = Stat::make(new HtmlString('<span style="color: #ffffff !important; font-weight: 600;">Create Design UMKM</span>'), 'Add New')
                 ->description(new HtmlString('<span style="color: #ffffff !important; opacity: 0.9;">Tambah design UMKM</span>'))
                 ->descriptionIcon('heroicon-m-paint-brush')
                 ->color('success')
@@ -122,13 +122,12 @@ class SummaryStatsWidget extends BaseWidget
             $totalPending  = Umkm::where('status', 'pending')->count();
             $totalReject   = Umkm::where('status', 'rejected')->count();
             $totalApproved = Umkm::whereNotIn('status', ['pending', 'rejected'])->count();
-            $totalPerluDesain = Umkm::where('status', 'menunggu_didesain')->count();
             $totalDesignReview = UmkmDesign::whereIn('status', ['pending', 'revised'])->count();
             $totalRevisi   = UmkmDesign::where('status', 'revision_needed')->count();
             $totalSiapLanjut = UmkmDesign::where('status', 'approved')->count();
             $totalFinal    = Umkm::whereIn('status', ['branded', 'terbranding_final'])->count();
 
-            // URGENT/REVIEW FIRST
+            // 1. Review Kandidat UMKM
             $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Review Kandidat UMKM</span>'), $totalPending)
                 ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Menunggu approval/reject</span>'))
                 ->descriptionIcon('heroicon-m-clock')->color('warning')
@@ -136,13 +135,15 @@ class SummaryStatsWidget extends BaseWidget
                 ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #ea580c;',
                     'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
 
-            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Perlu Di-desain</span>'), $totalPerluDesain)
-                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Menunggu antrean desainer</span>'))
-                ->descriptionIcon('heroicon-m-paint-brush')->color('warning')
-                ->url(UmkmResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'menunggu_didesain']]]))
-                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #d97706;',
+            // 2. UMKM Approved
+            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">UMKM Approved</span>'), $totalApproved)
+                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Sudah disetujui client</span>'))
+                ->descriptionIcon('heroicon-m-check-circle')->color('success')
+                ->url(UmkmResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'approved_all']]]))
+                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #16a34a;',
                     'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
 
+            // 3. Review Design (client only)
             if ($userRole === 'client') {
                 $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Review Design</span>'), $totalDesignReview)
                     ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Menunggu approval client</span>'))
@@ -152,6 +153,7 @@ class SummaryStatsWidget extends BaseWidget
                         'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
             }
 
+            // 4. Design Need Revision
             $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Design Need Revision</span>'), $totalRevisi)
                 ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Desain diminta revisi</span>'))
                 ->descriptionIcon('heroicon-m-arrow-path-rounded-square')->color('danger')
@@ -159,28 +161,7 @@ class SummaryStatsWidget extends BaseWidget
                 ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #ef4444;',
                     'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
 
-            // TOTALS
-            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Total Kandidat UMKM</span>'), $totalMasuk)
-                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Semua pengajuan masuk</span>'))
-                ->descriptionIcon('heroicon-m-building-storefront')->color('primary')
-                ->url(UmkmResource::getUrl('index'))
-                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #4f46e5;',
-                    'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
-
-            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Total UMKM Approved</span>'), $totalApproved)
-                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Sudah disetujui client</span>'))
-                ->descriptionIcon('heroicon-m-check-circle')->color('success')
-                ->url(UmkmResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'approved_all']]]))
-                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #16a34a;',
-                    'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
-
-            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Total UMKM Rejected</span>'), $totalReject)
-                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Ditolak client</span>'))
-                ->descriptionIcon('heroicon-m-x-circle')->color('danger')
-                ->url(UmkmResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'rejected']]]))
-                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #be123c;',
-                    'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
-
+            // 5. Total UMKM Designed & Revised
             $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Total UMKM Designed & Revised</span>'), $totalSiapLanjut)
                 ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Siap tahap selanjutnya</span>'))
                 ->descriptionIcon('heroicon-m-check-badge')->color('info')
@@ -188,6 +169,23 @@ class SummaryStatsWidget extends BaseWidget
                 ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #0891b2;',
                     'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
 
+            // 6. Total Kandidat UMKM
+            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Total Kandidat UMKM</span>'), $totalMasuk)
+                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Semua pengajuan masuk</span>'))
+                ->descriptionIcon('heroicon-m-building-storefront')->color('primary')
+                ->url(UmkmResource::getUrl('index'))
+                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #4f46e5;',
+                    'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
+
+            // 7. Total UMKM Rejected
+            $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Total UMKM Rejected</span>'), $totalReject)
+                ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Ditolak client</span>'))
+                ->descriptionIcon('heroicon-m-x-circle')->color('danger')
+                ->url(UmkmResource::getUrl('index', ['tableFilters' => ['status' => ['value' => 'rejected']]]))
+                ->extraAttributes(array_merge($extraHtmlStyles, ['style' => $baseStyle . ' background-color: #be123c;',
+                    'onmouseover' => "this.style.transform='translateY(-4px)';", 'onmouseout' => "this.style.transform='translateY(0)';"]));
+
+            // 8. Total UMKM Branded
             $stats[] = Stat::make(new HtmlString('<span style="color:#fff;font-weight:600;">Total UMKM Branded</span>'), $totalFinal)
                 ->description(new HtmlString('<span style="color:#fff;opacity:.9;">Workflow selesai</span>'))
                 ->descriptionIcon('heroicon-m-trophy')->color('success')

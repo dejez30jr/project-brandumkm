@@ -177,16 +177,21 @@ class UmkmTerbrandingResource extends Resource
                     ->label('No WhatsApp'),
 
                 \Filament\Infolists\Components\TextEntry::make('radius')
-                    ->label('Radius Alfamart'),
+                    ->label('Radius Alfamart')
+                    ->suffix(' Meter'),
 
                 \Filament\Infolists\Components\TextEntry::make('kota.nama')
                     ->label('Kota'),
 
                 \Filament\Infolists\Components\TextEntry::make('jam_buka')
-                    ->label('Jam Buka'),
+                    ->label('Jam Buka')
+                    ->formatStateUsing(fn ($state) => $state ? \Carbon\Carbon::parse($state)->format('H:i') : '-')
+                    ->placeholder('-'),
 
                 \Filament\Infolists\Components\TextEntry::make('jam_tutup')
-                    ->label('Jam Tutup'),
+                    ->label('Jam Tutup')
+                    ->formatStateUsing(fn ($state) => $state ? \Carbon\Carbon::parse($state)->format('H:i') : '-')
+                    ->placeholder('-'),
             ])
             ->columns(2),
 

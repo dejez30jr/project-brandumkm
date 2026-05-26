@@ -189,13 +189,7 @@ class UmkmDesignResource extends Resource
                             ->default(auth()->id()),
 
                         Forms\Components\Hidden::make('versi')
-                            ->default(function (Forms\Get $get) {
-                                $umkmId = $get('umkm_id');
-                                if (!$umkmId) return 1;
-
-                                $lastVersion = UmkmDesign::where('umkm_id', $umkmId)->max('versi');
-                                return ($lastVersion ?? 0) + 1;
-                            }),
+                            ->default(0),
                     ])->columns(2),
             ]);
     }
@@ -213,7 +207,7 @@ class UmkmDesignResource extends Resource
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('versi')
-                    ->label('Versi')
+                    ->label('Revision')
                     ->badge(),
                 Tables\Columns\TextColumn::make('designer.name')
                     ->label('Designer'),
@@ -317,6 +311,7 @@ class UmkmDesignResource extends Resource
                         $record->update([
                             'status' => 'revision_needed',
                             'catatan_revisi' => $data['catatan_revisi'],
+                            'versi' => $record->versi + 1,
                         ]);
 
                         if ($record->umkm) {
@@ -345,7 +340,7 @@ class UmkmDesignResource extends Resource
                 \Filament\Infolists\Components\Section::make('Informasi UMKM & Versi Design')
                     ->schema([
                         \Filament\Infolists\Components\TextEntry::make('umkm.nama_usaha')->label('Nama Usaha'),
-                        \Filament\Infolists\Components\TextEntry::make('versi')->label('Versi Design')->badge(),
+                        \Filament\Infolists\Components\TextEntry::make('versi')->label('Revision')->badge(),
                         \Filament\Infolists\Components\TextEntry::make('status')
                             ->badge()
                             ->color(fn (string $state): string => match ($state) {

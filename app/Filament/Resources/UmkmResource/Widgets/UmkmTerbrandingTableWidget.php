@@ -130,7 +130,8 @@ class UmkmTerbrandingTableWidget extends BaseWidget
                     ->label('No WhatsApp'),
 
                 \Filament\Infolists\Components\TextEntry::make('radius')
-                    ->label('Radius Alfamart'),
+                    ->label('Radius Alfamart')
+                    ->suffix(' Meter'),
 
                 \Filament\Infolists\Components\TextEntry::make('kota.nama')
                     ->label('Kota'),
