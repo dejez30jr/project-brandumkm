@@ -978,11 +978,15 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
                     ->label('Reject UMKM')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->action(function (Umkm $record) {
-                        $alasan = request()->input('alasan_reject', 'Ditolak oleh client');
+                    ->form([
+                        \Filament\Forms\Components\Textarea::make('alasan_reject')
+                            ->label('Alasan Reject')
+                            ->required(),
+                    ])
+                    ->action(function (Umkm $record, array $data) {
                         $record->update([
                             'status' => 'rejected',
-                            'alasan_reject' => $alasan,
+                            'alasan_reject' => $data['alasan_reject'],
                         ]);
                         \Filament\Notifications\Notification::make()->title('UMKM Ditolak ❌')->danger()->send();
                     }),
