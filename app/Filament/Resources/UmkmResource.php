@@ -154,7 +154,9 @@ public static function canDelete($record): bool
 
                         Forms\Components\TextInput::make('radius')
                             ->label('Radius dari Alfamart')
-                            ->placeholder('Contoh:50,20...'),
+                            ->placeholder('Contoh: 50')
+                            ->suffix('Meter')
+                            ->numeric(),
 
                         Forms\Components\TextInput::make('request_text')
                             ->label('Teks Branding yang Diminta')
@@ -802,7 +804,8 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
                     ->label('No WhatsApp'),
 
                 \Filament\Infolists\Components\TextEntry::make('radius')
-                    ->label('Radius Alfamart'),
+                    ->label('Radius Alfamart')
+                    ->suffix(' Meter'),
 
                 \Filament\Infolists\Components\TextEntry::make('kota.nama')
                     ->label('Kota'),
