@@ -23,9 +23,9 @@ class UmkmObserver
     {
         if ($umkm->wasChanged('status')) {
             if ($umkm->status === 'approved') {
-                // PRD: approved → otomatis berubah ke menunggu_didesain
-                $umkm->updateQuietly(['status' => Umkm::STATUS_MENUNGGU_DIDESAIN]);
+                // PRD: kirim notifikasi dulu saat status approved, lalu ubah ke menunggu_didesain
                 NotifikasiService::notifyUmkmApproved($umkm);
+                $umkm->updateQuietly(['status' => Umkm::STATUS_MENUNGGU_DIDESAIN]);
             } elseif ($umkm->status === 'rejected') {
                 NotifikasiService::notifyUmkmRejected($umkm);
             }

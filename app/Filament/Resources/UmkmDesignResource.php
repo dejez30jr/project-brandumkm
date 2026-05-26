@@ -65,10 +65,10 @@ class UmkmDesignResource extends Resource
                 ->count();
             return $count > 0 ? 'danger' : null;
         } else {
-            $hasDanger = UmkmDesign::where('status', 'revision_needed')->exists();
-            if ($hasDanger) return 'danger';
-            $hasWarning = UmkmDesign::where('status', 'pending')->exists();
-            if ($hasWarning) return 'warning';
+            $hasRevised = UmkmDesign::where('status', 'revised')->exists();
+            if ($hasRevised) return 'warning';
+            $hasPending = UmkmDesign::where('status', 'pending')->exists();
+            if ($hasPending) return 'warning';
             return null;
         }
     }

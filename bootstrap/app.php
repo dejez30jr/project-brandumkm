@@ -12,20 +12,14 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
-        then: function () {
-            RateLimiter::for('web', function (Request $request) {
-                return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
-            });
-
-            RateLimiter::for('uploads', function (Request $request) {
-                return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
-            });
-        },
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->web(append: [
-            \Illuminate\Routing\Middleware\ThrottleRequests::class.':web',
-        ]);
+        //
+    })
+    ->booted(function () {
+        RateLimiter::for('web', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
