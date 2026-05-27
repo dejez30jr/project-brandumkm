@@ -525,7 +525,8 @@ Forms\Components\FileUpload::make('foto_depan')
     ->uploadProgressIndicatorPosition('left')
     ->openable()
     ->downloadable()
-    ->previewable(),
+    ->previewable()
+    ->extraInputAttributes(['capture' => 'environment']),
 
 Forms\Components\FileUpload::make('foto_kanan')
     ->required()
@@ -547,7 +548,8 @@ Forms\Components\FileUpload::make('foto_kanan')
     ->uploadProgressIndicatorPosition('left')
     ->openable()
     ->downloadable()
-    ->previewable(),
+    ->previewable()
+    ->extraInputAttributes(['capture' => 'environment']),
 
 Forms\Components\FileUpload::make('foto_kiri')
     ->required()
@@ -569,7 +571,8 @@ Forms\Components\FileUpload::make('foto_kiri')
     ->uploadProgressIndicatorPosition('left')
     ->openable()
     ->downloadable()
-    ->previewable(),
+    ->previewable()
+    ->extraInputAttributes(['capture' => 'environment']),
 
 Forms\Components\FileUpload::make('foto_plang_alfamart')
     ->required()
@@ -591,7 +594,8 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
     ->uploadProgressIndicatorPosition('left')
     ->openable()
     ->downloadable()
-    ->previewable(),
+    ->previewable()
+    ->extraInputAttributes(['capture' => 'environment']),
 
 Forms\Components\FileUpload::make('foto_tampak_jauh')
     ->required()
@@ -613,7 +617,8 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
     ->uploadProgressIndicatorPosition('left')
     ->openable()
     ->downloadable()
-    ->previewable(),
+    ->previewable()
+    ->extraInputAttributes(['capture' => 'environment']),
 
             ])
 
@@ -631,7 +636,8 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
                     ->visibility('public')
                     ->acceptedFileTypes(['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/3gpp', 'video/3gpp2'])
                     ->helperText('Rekam dari lokasi gerobak sampai terlihat Alfamart. Max 2 menit. Format: MP4, MOV, AVI, 3GP.')
-                    ->placeholder('Klik untuk upload video'),
+                    ->placeholder('Klik untuk rekam video')
+                    ->extraInputAttributes(['capture' => 'environment']),
             ])
             ->collapsible(),
 
