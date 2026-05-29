@@ -44,9 +44,9 @@ class UmkmResource extends Resource
 
     $user = auth()->user();
 
-    // Jika role pic_lapangan, tampilkan hanya data miliknya
-    if ($user && $user->role === 'pic_lapangan') {
-        $query->where('submitted_by', $user->id);
+    // Jika role pic_lapangan, tampilkan hanya data sesuai kota akunnya
+    if ($user && $user->role === 'pic_lapangan' && $user->kota_id) {
+        $query->where('kota_id', $user->kota_id);
     }
 
     return $query;
@@ -629,8 +629,8 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
         Forms\Components\Section::make('VIDEO VALIDASI JIKA ALFAMART TIDAK TERLIHAT ATAU TERHALANAG (OPSIONAL)')
             ->schema([
                 Forms\Components\FileUpload::make('video_validasi')
-                  ->label('UPLOAD VIDEO (MP4) max 2 menit / 30MB — Wajib jika Alfamart tidak terlihat di foto')
-                     ->maxSize(30720) // 30MB
+                  ->label('UPLOAD VIDEO (MP4) max 2 menit / 50MB — Wajib jika Alfamart tidak terlihat di foto')
+                     ->maxSize(51200) // 50MB
                     ->disk('public')
                     ->directory(fn (Forms\Get $get) => 'umkm/' . ($get('kota_id') ?: 'temp') . '/video')
                     ->visibility('public')
