@@ -88,7 +88,12 @@ class UmkmTerbrandingResource extends Resource
                       ->whereNotNull('stiker_tampak_kanan')
                       ->whereNotNull('stiker_tampak_kiri')
                       ->whereNotNull('foto_wide')
-                      ->latest(); 
+                      ->latest();
+
+                // Filter berdasarkan kota akun team_pasang
+                if ($user && $user->role === 'team_pasang' && $user->kota_id) {
+                    $query->where('kota_id', $user->kota_id);
+                }
             })
             ->columns([
                 Tables\Columns\TextColumn::make('nama_usaha')
