@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Jobs\CompressUmkmVideo;
 use App\Jobs\OptimizeUmkmPhoto;
 use App\Models\Umkm;
 use App\Services\NotifikasiService;
@@ -17,6 +18,7 @@ class UmkmObserver
     {
         NotifikasiService::notifyNewUmkm($umkm);
         $this->dispatchPhotoOptimization($umkm, self::PHOTO_FIELDS);
+        $this->dispatchVideoCompression($umkm);
     }
 
     public function updated(Umkm $umkm): void
@@ -33,6 +35,10 @@ class UmkmObserver
 
         $changedPhotos = array_filter(self::PHOTO_FIELDS, fn ($f) => $umkm->wasChanged($f));
         $this->dispatchPhotoOptimization($umkm, $changedPhotos);
+
+        if ($umkm->wasChanged('video_validasi')) {
+            $this->dispatchVideoCompression($umkm);
+        }
     }
 
     private function dispatchPhotoOptimization(Umkm $umkm, array $fields): void
@@ -41,6 +47,13 @@ class UmkmObserver
             if (!empty($umkm->{$field})) {
                 OptimizeUmkmPhoto::dispatch($umkm->{$field});
             }
+        }
+    }
+
+    private function dispatchVideoCompression(Umkm $umkm): void
+    {
+        if (!empty($umkm->video_validasi)) {
+            CompressUmkmVideo::dispatch($umkm->video_validasi);
         }
     }
 }

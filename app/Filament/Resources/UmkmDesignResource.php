@@ -249,11 +249,20 @@ class UmkmDesignResource extends Resource
 
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
+                        'review' => 'Review (Pending + Revised)',
                         'pending' => 'Pending',
                         'approved' => 'Approved',
                         'revision_needed' => 'Perlu Revisi',
                         'revised' => 'Sudah Direvisi',
-                    ]),
+                    ])
+                    ->query(function ($query, array $data) {
+                        if (empty($data['value'])) return;
+                        if ($data['value'] === 'review') {
+                            $query->whereIn('status', ['pending', 'revised']);
+                        } else {
+                            $query->where('status', $data['value']);
+                        }
+                    }),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

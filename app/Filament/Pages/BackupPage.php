@@ -12,7 +12,6 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Illuminate\Support\Facades\Response;
 use Maatwebsite\Excel\Facades\Excel;
 use ZipArchive;
 
@@ -84,6 +83,9 @@ class BackupPage extends Page implements HasForms
 
     public function downloadBackup()
     {
+        ini_set('memory_limit', '512M');
+        set_time_limit(300);
+
         $formData = $this->form->getState();
         $backupType = $formData['backup_type'];
         $kotaId = $formData['kota_id'] ?? null;
@@ -109,7 +111,11 @@ class BackupPage extends Page implements HasForms
             default => '_all',
         };
         $zipFileName = 'backup_umkm' . $suffix . '_' . date('Y-m-d_H-i-s') . '.zip';
-        $zipPath = storage_path('app/' . $zipFileName);
+        $backupDir = storage_path('app/backups');
+        if (!is_dir($backupDir)) {
+            mkdir($backupDir, 0755, true);
+        }
+        $zipPath = $backupDir . '/' . $zipFileName;
 
         $zip = new ZipArchive;
         if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== TRUE) {
@@ -120,7 +126,8 @@ class BackupPage extends Page implements HasForms
         $filesPath = storage_path('app/public');
 
         foreach ($records as $umkm) {
-            $folder = "umkm_{$umkm->id}_{$umkm->nama_usaha}";
+            $kotaName = $umkm->kota?->nama ?? 'Tanpa_Kota';
+            $folder = "{$kotaName}/umkm_{$umkm->id}_{$umkm->nama_usaha}";
 
             // Foto UMKM
             $this->addFileToZip($zip, $filesPath, $umkm->foto_depan, "{$folder}/foto/");
@@ -165,7 +172,7 @@ class BackupPage extends Page implements HasForms
 
         Notification::make()->title('Backup Berhasil Dibuat!')->success()->send();
 
-        return Response::download($zipPath)->deleteFileAfterSend(true);
+        return redirect()->to(route('backup.download', ['filename' => $zipFileName]));
     }
 
     private function addFileToZip(ZipArchive $zip, string $basePath, ?string $relativePath, string $zipFolder): void

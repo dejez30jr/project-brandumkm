@@ -44,9 +44,9 @@ class UmkmResource extends Resource
 
     $user = auth()->user();
 
-    // Jika role pic_lapangan, tampilkan hanya data miliknya
-    if ($user && $user->role === 'pic_lapangan') {
-        $query->where('submitted_by', $user->id);
+    // Jika role pic_lapangan, tampilkan hanya data sesuai kota akunnya
+    if ($user && $user->role === 'pic_lapangan' && $user->kota_id) {
+        $query->where('kota_id', $user->kota_id);
     }
 
     return $query;
@@ -525,7 +525,8 @@ Forms\Components\FileUpload::make('foto_depan')
     ->uploadProgressIndicatorPosition('left')
     ->openable()
     ->downloadable()
-    ->previewable(),
+    ->previewable()
+    ->extraInputAttributes(['capture' => 'environment']),
 
 Forms\Components\FileUpload::make('foto_kanan')
     ->required()
@@ -547,7 +548,8 @@ Forms\Components\FileUpload::make('foto_kanan')
     ->uploadProgressIndicatorPosition('left')
     ->openable()
     ->downloadable()
-    ->previewable(),
+    ->previewable()
+    ->extraInputAttributes(['capture' => 'environment']),
 
 Forms\Components\FileUpload::make('foto_kiri')
     ->required()
@@ -569,7 +571,8 @@ Forms\Components\FileUpload::make('foto_kiri')
     ->uploadProgressIndicatorPosition('left')
     ->openable()
     ->downloadable()
-    ->previewable(),
+    ->previewable()
+    ->extraInputAttributes(['capture' => 'environment']),
 
 Forms\Components\FileUpload::make('foto_plang_alfamart')
     ->required()
@@ -591,7 +594,8 @@ Forms\Components\FileUpload::make('foto_plang_alfamart')
     ->uploadProgressIndicatorPosition('left')
     ->openable()
     ->downloadable()
-    ->previewable(),
+    ->previewable()
+    ->extraInputAttributes(['capture' => 'environment']),
 
 Forms\Components\FileUpload::make('foto_tampak_jauh')
     ->required()
@@ -613,7 +617,8 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
     ->uploadProgressIndicatorPosition('left')
     ->openable()
     ->downloadable()
-    ->previewable(),
+    ->previewable()
+    ->extraInputAttributes(['capture' => 'environment']),
 
             ])
 
@@ -624,14 +629,15 @@ Forms\Components\FileUpload::make('foto_tampak_jauh')
         Forms\Components\Section::make('VIDEO VALIDASI JIKA ALFAMART TIDAK TERLIHAT ATAU TERHALANAG (OPSIONAL)')
             ->schema([
                 Forms\Components\FileUpload::make('video_validasi')
-                  ->label('UPLOAD VIDEO (MP4) max 2 menit / 30MB — Wajib jika Alfamart tidak terlihat di foto')
-                     ->maxSize(30720) // 30MB
+                  ->label('UPLOAD VIDEO (MP4) max 2 menit / 50MB — Wajib jika Alfamart tidak terlihat di foto')
+                     ->maxSize(51200) // 50MB
                     ->disk('public')
                     ->directory(fn (Forms\Get $get) => 'umkm/' . ($get('kota_id') ?: 'temp') . '/video')
                     ->visibility('public')
                     ->acceptedFileTypes(['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/3gpp', 'video/3gpp2'])
                     ->helperText('Rekam dari lokasi gerobak sampai terlihat Alfamart. Max 2 menit. Format: MP4, MOV, AVI, 3GP.')
-                    ->placeholder('Klik untuk upload video'),
+                    ->placeholder('Klik untuk rekam video')
+                    ->extraInputAttributes(['capture' => 'environment']),
             ])
             ->collapsible(),
 
