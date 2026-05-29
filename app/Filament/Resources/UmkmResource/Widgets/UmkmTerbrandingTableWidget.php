@@ -27,6 +27,8 @@ class UmkmTerbrandingTableWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
+        $user = auth()->user();
+
         return $table
             ->query(
                 Umkm::query()
@@ -35,6 +37,9 @@ class UmkmTerbrandingTableWidget extends BaseWidget
                     ->whereNotNull('stiker_tampak_kanan')
                     ->whereNotNull('stiker_tampak_kiri')
                     ->whereNotNull('foto_wide')
+                    ->when($user && $user->role === 'team_pasang' && $user->kota_id, function ($q) use ($user) {
+                        $q->where('kota_id', $user->kota_id);
+                    })
                     ->latest()
             )
 
