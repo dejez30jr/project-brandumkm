@@ -123,6 +123,11 @@ class UmkmStikerResource extends Resource
                           ->orWhereNull('foto_wide');
                     })
                     ->latest();
+
+                // Filter berdasarkan kota akun team_pasang
+                if ($user && $user->role === 'team_pasang' && $user->kota_id) {
+                    $query->where('kota_id', $user->kota_id);
+                }
             })
             ->columns([
                 Tables\Columns\TextColumn::make('nama_usaha')
